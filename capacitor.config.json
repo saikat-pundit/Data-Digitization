@@ -1,6 +1,6 @@
 {
   "appId": "com.uploader.app",
   "appName": "Photo Uploader",
-  "webDir": ".",
+  "webDir": "www",
   "bundledWebRuntime": false
 }
