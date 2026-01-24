@@ -24,36 +24,28 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # 1. Prepare the Web Folder
       - name: Prepare Web Assets
         run: |
           mkdir www
           mv index.html www/
 
-      # 2. Add Android Platform
       - name: Add Android Platform
         run: npx cap add android
 
-      # --- NEW STEP: INJECT CAMERA PERMISSIONS ---
+      # --- SAFER PERMISSION INJECTION ---
+      # This inserts permissions immediately after the opening <manifest> tag
       - name: Inject Camera Permissions
         run: |
-          # Find the AndroidManifest.xml file
           MANIFEST_FILE=android/app/src/main/AndroidManifest.xml
-          
-          # Inject permissions for Camera, Storage, and Internet
-          sed -i 's/<application/<uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>\n    <application/g' $MANIFEST_FILE
-          
-          # Verify the injection (optional print)
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' $MANIFEST_FILE
           cat $MANIFEST_FILE
 
-      # 3. Build the APK
       - name: Build APK
         run: |
           npx cap sync
           cd android
           ./gradlew assembleDebug
 
-      # 4. Upload the Result
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
