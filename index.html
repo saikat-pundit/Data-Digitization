@@ -381,10 +381,34 @@ function createSearchableDropdown(container,header,columnIndex){
   const select=document.createElement('select');
   select.name=header; select.id=`dropdown-${columnIndex}`; select.required=mandatoryIndices.includes(columnIndex); select.style.display='none';
   if(columnIndex===1){
-    searchInput.value="208"; searchInput.readOnly=true; searchInput.style.backgroundColor='#f0f0f0';
-    select.innerHTML=`<option value="208">208</option>`; select.value="208";
-    setTimeout(()=>updateNextDropdowns(1),300);
-  } else{
+    searchInput.placeholder = "Select AC No...";
+    const def = document.createElement('option'); 
+    def.value = ""; 
+    def.textContent = "-- Select AC No --"; 
+    select.appendChild(def);
+    const start = 206;
+    const end = 216;
+    for(let i = start; i <= end; i++) {
+        const val = i.toString();
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        select.appendChild(opt);
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.textContent = val;
+        item.onclick = () => {
+            select.value = val;
+            searchInput.value = val;
+            dropdownList.style.display = 'none';
+            updateNextDropdowns(columnIndex);
+        };
+        dropdownList.appendChild(item);
+    }
+    searchInput.readOnly = false;
+    searchInput.style.backgroundColor = 'white';
+    
+  } else {
     searchInput.placeholder=`Search ${header}...`;
     const def=document.createElement('option'); def.value=""; def.textContent=`-- Select ${header} --`; select.appendChild(def);
   }
