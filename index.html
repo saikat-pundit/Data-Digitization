@@ -714,9 +714,13 @@ function setupFormSubmission(){
       clearInterval(timerInterval);
       
       setTimeout(()=>{ 
-        alert("Success!"); 
-        location.reload(); 
-      },1000);
+    alert("Success! Data Uploaded."); 
+    freeUpMemory(); 
+    document.getElementById('confirmModal').style.display = 'none';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('uploadStatus').textContent = 'Ready';
+
+  }, 1000);
       
     } catch(err){
       document.getElementById('uploadStatus').textContent='Upload failed!'; 
@@ -1564,7 +1568,36 @@ function startAppSession(loginTime) {
 
     }, 1000);
 }
+function freeUpMemory() {
+  const images = document.querySelectorAll('.preview-img');
+  images.forEach(img => {
+    // If the image has a blob URL, release it from memory
+    if (img.src && img.src.startsWith('blob:')) {
+      URL.revokeObjectURL(img.src);
+    }
+    img.src = ''; 
+    img.style.display = 'none';
+  });
+  const fileInputs = document.querySelectorAll('input[type="file"]');
+  fileInputs.forEach(input => {
+    input.value = '';
+    input.compressedFile = null;
+  });
+  const statusSpans = document.querySelectorAll('[id^="status-"]');
+  statusSpans.forEach(span => {
+    span.innerHTML = 'No photo';
+    span.style.color = '#e74c3c';
+  });
+  const clearBtns = document.querySelectorAll('.clear-btn');
+  clearBtns.forEach(btn => {
+    btn.style.display = 'none';
+  });
 
+  // 6. Force the browser to run garbage collection (if available)
+  if (window.gc) { try { window.gc(); } catch(e){} }
+
+  console.log("Memory successfully cleared.");
+}
 window.onload = async function() {
     // 1. Check Session
     const storedTime = localStorage.getItem('app_login_time');
