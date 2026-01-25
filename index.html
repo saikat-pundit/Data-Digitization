@@ -371,48 +371,20 @@ function createFormFields(){
 function createSearchableDropdown(container,header,columnIndex){
   const wrapper=document.createElement('div');
   wrapper.className='searchable-dropdown-wrapper';
-  
   if(!limitedCSVData||limitedCSVData.length===0){
     const errorMsg=document.createElement('p');
     errorMsg.textContent='Data not loaded yet'; errorMsg.style.color='red';
     container.appendChild(errorMsg); return;
   }
-  
   const searchInput=document.createElement('input');
   searchInput.type='text'; searchInput.className='search-input'; searchInput.id=`search-${columnIndex}`;
-  
   const select=document.createElement('select');
   select.name=header; select.id=`dropdown-${columnIndex}`; select.required=mandatoryIndices.includes(columnIndex); select.style.display='none';
-  const dropdownList=document.createElement('div');
-  dropdownList.className='dropdown-list'; dropdownList.style.display='none';
   if(columnIndex===1){
-    searchInput.placeholder = "Select AC No...";
-    const def = document.createElement('option'); 
-    def.value = ""; 
-    def.textContent = "-- Select AC No --"; 
-    select.appendChild(def);
-    const options = ["212", "213", "214"];
-    options.forEach(optVal => {
-        const opt = document.createElement('option');
-        opt.value = optVal;
-        opt.textContent = optVal;
-        select.appendChild(opt);
-        const item = document.createElement('div');
-        item.className = 'dropdown-item';
-        item.textContent = optVal;
-        item.onclick = () => {
-            select.value = optVal;
-            searchInput.value = optVal;
-            dropdownList.style.display = 'none';
-            updateNextDropdowns(columnIndex);
-        };
-        dropdownList.appendChild(item); 
-    });
-    
-    searchInput.readOnly = false;
-    searchInput.style.backgroundColor = 'white';
-    
-  } else {
+    searchInput.value="208"; searchInput.readOnly=true; searchInput.style.backgroundColor='#f0f0f0';
+    select.innerHTML=`<option value="208">208</option>`; select.value="208";
+    setTimeout(()=>updateNextDropdowns(1),300);
+  } else{
     searchInput.placeholder=`Search ${header}...`;
     const def=document.createElement('option'); def.value=""; def.textContent=`-- Select ${header} --`; select.appendChild(def);
   }
@@ -663,17 +635,7 @@ function setupFormSubmission(){
       isCompressing=false;
       
       document.getElementById('uploadStatus').textContent='Sending to server...';
-      const scriptUrls = [
-          'https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec',
-          'https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec', 
-          'https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec', 
-          'https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec', 
-          'https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec'  
-      ];
-      
-      const randomUrl = scriptUrls[Math.floor(Math.random() * scriptUrls.length)];
-      
-      await fetch(randomUrl, {
+      await fetch('https://script.google.com/macros/s/AKfycbzln6bsC6nVnjc0NR88jz0J_d6v-ZuCgGPj1ec1y82OHGf8-JDGjrr3kukrsJhGBwEJIw/exec',{
         method:'POST',
         mode:'no-cors',
         body:JSON.stringify(payload)
@@ -1037,91 +999,41 @@ function cleanupResources(img, canvas) {
 }
 
 function createTrackingForm(){
-  const trackingForm=document.getElementById('trackingForm');
-  trackingForm.innerHTML='';
-  const dropdownsContainer=document.createElement('div');
-  dropdownsContainer.className='tracking-dropdowns';
-  const container1=document.createElement('div');
-  container1.className='form-field';
-  const label1=document.createElement('label');
-  label1.textContent=headers[1]+' *';
-  container1.appendChild(label1);
-  
-  const select1=document.createElement('select');
-  select1.id='tracking-dropdown-1';
-  select1.className='tracking-dropdown';
-  select1.innerHTML=`<option value="">-- Select ${headers[1]} --</option>`;
-  const uniqueCol1 = [...new Set(limitedCSVData.map(row=>row[1]))].filter(v=>v).sort();
-  uniqueCol1.forEach(val => {
-      const opt = document.createElement('option');
-      opt.value = val;
-      opt.textContent = val;
-      select1.appendChild(opt);
-  });
-  
-  select1.onchange = () => {
-     updateTrackingDropdown(2, select1.value);
-  };
-  container1.appendChild(select1);
-  dropdownsContainer.appendChild(container1);
-  const container2=document.createElement('div');
-  container2.className='form-field';
-  const label2=document.createElement('label');
-  label2.textContent=headers[2];
-  container2.appendChild(label2);
-  
+  const trackingForm=document.getElementById('trackingForm');trackingForm.innerHTML='';
+  const dropdownsContainer=document.createElement('div');dropdownsContainer.className='tracking-dropdowns';
+  const container1=document.createElement('div');container1.className='form-field';
+  const label1=document.createElement('label');label1.textContent=headers[1]+' *';container1.appendChild(label1);
+  const fixedInput=document.createElement('input');
+  fixedInput.type='text';fixedInput.id='tracking-dropdown-1';fixedInput.className='tracking-dropdown';fixedInput.value='208';fixedInput.readOnly=true;fixedInput.style.backgroundColor='#f0f0f0';
+  const hiddenSelect=document.createElement('select');
+  hiddenSelect.id='tracking-hidden-select-1';hiddenSelect.style.display='none';
+  const hiddenOption=document.createElement('option');hiddenOption.value='208';hiddenOption.selected=true;hiddenSelect.appendChild(hiddenOption);
+  container1.appendChild(fixedInput);container1.appendChild(hiddenSelect);dropdownsContainer.appendChild(container1);
+  const container2=document.createElement('div');container2.className='form-field';
+  const label2=document.createElement('label');label2.textContent=headers[2];container2.appendChild(label2);
   const select2=document.createElement('select');
-  select2.id='tracking-dropdown-2';
-  select2.className='tracking-dropdown';
-  select2.disabled=true;
-  select2.innerHTML=`<option value="">-- Select ${headers[2]} --</option>`;
-  
-  select2.onchange=()=>{
-      const val1 = document.getElementById('tracking-dropdown-1').value;
-      const val2 = select2.value;
-      if(val1 && val2) updateTrackingDropdown(3, val1, val2);
-  };
-  container2.appendChild(select2);
-  dropdownsContainer.appendChild(container2);
-  const container3=document.createElement('div');
-  container3.className='form-field';
-  const label3=document.createElement('label');
-  label3.textContent=headers[3];
-  container3.appendChild(label3);
-  
+  select2.id='tracking-dropdown-2';select2.className='tracking-dropdown';select2.disabled=true;select2.innerHTML=`<option value="">-- Select ${headers[2]} --</option>`;
+  select2.onchange=()=>{const selectedValue1='208',selectedValue2=select2.value;if(selectedValue1&&selectedValue2) updateTrackingDropdown(3,selectedValue1,selectedValue2);};
+  container2.appendChild(select2);dropdownsContainer.appendChild(container2);
+  const container3=document.createElement('div');container3.className='form-field';
+  const label3=document.createElement('label');label3.textContent=headers[3];container3.appendChild(label3);
   const select3=document.createElement('select');
-  select3.id='tracking-dropdown-3';
-  select3.className='tracking-dropdown';
-  select3.disabled=true;
-  select3.innerHTML=`<option value="">-- Select ${headers[3]} --</option>`;
-  
+  select3.id='tracking-dropdown-3';select3.className='tracking-dropdown';select3.disabled=true;select3.innerHTML=`<option value="">-- Select ${headers[3]} --</option>`;
   select3.onchange=()=>{
-    const val1 = document.getElementById('tracking-dropdown-1').value;
-    const val2 = document.getElementById('tracking-dropdown-2').value;
-    const val3 = select3.value;
-    if(val1 && val2 && val3) searchTrackingData(val1, val2, val3);
+    const selectedValue1='208',selectedValue2=document.getElementById('tracking-dropdown-2').value,selectedValue3=select3.value;
+    if(selectedValue1&&selectedValue2&&selectedValue3) searchTrackingData(selectedValue1,selectedValue2,selectedValue3);
   };
-  container3.appendChild(select3);
-  dropdownsContainer.appendChild(container3);
-  
-  trackingForm.appendChild(dropdownsContainer);
+  container3.appendChild(select3);dropdownsContainer.appendChild(container3);trackingForm.appendChild(dropdownsContainer);
+  setTimeout(()=>{updateTrackingDropdown(2,'208');},100);
 }
 
 function updateTrackingDropdown(columnIndex,...selectedValues){
-  const select=document.getElementById(`tracking-dropdown-${columnIndex}`);
-  if(!select) return;
-  select.innerHTML=`<option value="">-- Select ${headers[columnIndex]} --</option>`;
-  select.disabled=true;
-  const filters={};
-  if(columnIndex === 2) {
-      const val1 = document.getElementById('tracking-dropdown-1').value;
-      if(val1) filters[1] = val1;
-  }
-  else if(columnIndex === 3) {
-      const val1 = document.getElementById('tracking-dropdown-1').value;
-      const val2 = document.getElementById('tracking-dropdown-2').value;
-      if(val1) filters[1] = val1;
-      if(val2) filters[2] = val2;
+  const select=document.getElementById(`tracking-dropdown-${columnIndex}`);if(!select) return;
+  select.innerHTML=`<option value="">-- Select ${headers[columnIndex]} --</option>`;select.disabled=true;
+  const filters={1:'208'};
+  for(let i=2;i<columnIndex;i++){
+    const prevSelect=document.getElementById(`tracking-dropdown-${i}`);
+    if(prevSelect&&prevSelect.value) filters[i]=prevSelect.value;
   }
   const filteredRows=limitedCSVData.filter(row=>Object.keys(filters).every(k=>row[k]===filters[k]));
   const uniqueValues=[...new Set(filteredRows.map(row=>row[columnIndex]))].filter(v=>v).sort((a,b)=>{
@@ -1390,7 +1302,7 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
 }
 
 function submitVerification(statusText,idValue){
-  const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec';
+  const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzln6bsC6nVnjc0NR88jz0J_d6v-ZuCgGPj1ec1y82OHGf8-JDGjrr3kukrsJhGBwEJIw/exec';
   const now=new Date(),day=now.getDate(),month=now.toLocaleString('en-GB',{month:'short'}),year=now.getFullYear();
   let hours=now.getHours(),minutes=now.getMinutes().toString().padStart(2,'0'),ampm=hours>=12?'pm':'am';
   hours=hours%12;hours=hours?hours:12;
