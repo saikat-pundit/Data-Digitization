@@ -49,35 +49,39 @@ jobs:
           MANIFEST_FILE=android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' $MANIFEST_FILE
 
-      # 5. FORCE OVERWRITE LOGO & SPLASH
+      # 5. FORCE OVERWRITE LOGO & SPLASH (The Fix)
       - name: Update App Icon & Splash
         run: |
-          echo "Overwriting Android Icons..."
+          echo "Starting Aggressive Icon & Splash Overwrite..."
           RES_DIR=android/app/src/main/res
           
-          # Delete adaptive icon folder so Android uses our PNGs
+          # A. NUCLEAR FIX: Delete Adaptive Icons so Android uses our PNGs
           rm -rf $RES_DIR/mipmap-anydpi-v26
           
-          # Copy logo to all icon folders
-          cp logo.png $RES_DIR/mipmap-mdpi/ic_launcher.png
-          cp logo.png $RES_DIR/mipmap-hdpi/ic_launcher.png
-          cp logo.png $RES_DIR/mipmap-xhdpi/ic_launcher.png
-          cp logo.png $RES_DIR/mipmap-xxhdpi/ic_launcher.png
-          cp logo.png $RES_DIR/mipmap-xxxhdpi/ic_launcher.png
+          # B. LOOP THROUGH ALL DENSITIES
+          # This copies your logo into mdpi, hdpi, xhdpi, xxhdpi, and xxxhdpi folders
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            echo "Updating $density..."
+            
+            # 1. Update Launcher Icons
+            cp logo.png $RES_DIR/mipmap-$density/ic_launcher.png
+            cp logo.png $RES_DIR/mipmap-$density/ic_launcher_round.png
+            
+            # 2. Update Splash Screens (Portrait)
+            # We create the folder if it doesn't exist, then copy the file
+            mkdir -p $RES_DIR/drawable-port-$density
+            cp logo.png $RES_DIR/drawable-port-$density/splash.png
+            
+            # 3. Update Splash Screens (Landscape)
+            mkdir -p $RES_DIR/drawable-land-$density
+            cp logo.png $RES_DIR/drawable-land-$density/splash.png
+          done
           
-          cp logo.png $RES_DIR/mipmap-mdpi/ic_launcher_round.png
-          cp logo.png $RES_DIR/mipmap-hdpi/ic_launcher_round.png
-          cp logo.png $RES_DIR/mipmap-xhdpi/ic_launcher_round.png
-          cp logo.png $RES_DIR/mipmap-xxhdpi/ic_launcher_round.png
-          cp logo.png $RES_DIR/mipmap-xxxhdpi/ic_launcher_round.png
-
-          # Update Splash Screen
-          SPLASH_DIR=android/app/src/main/res/drawable
-          mkdir -p $SPLASH_DIR
-          cp logo.png $SPLASH_DIR/splash.png
-          if [ -d android/app/src/main/res/drawable-land ]; then
-             cp logo.png android/app/src/main/res/drawable-land/splash.png
-          fi
+          # C. Update Default Drawable (Fallback)
+          mkdir -p $RES_DIR/drawable
+          cp logo.png $RES_DIR/drawable/splash.png
+          
+          echo "All images updated successfully."
 
       # 6. Build APK
       - name: Build APK
@@ -86,7 +90,7 @@ jobs:
           cd android
           ./gradlew assembleDebug
 
-      # 7. RENAME THE FILE (The Fix)
+      # 7. RENAME FILE
       - name: Rename APK to AERO
         run: |
           cd android/app/build/outputs/apk/debug/
