@@ -24,28 +24,61 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      # 1. Prepare Web Assets
       - name: Prepare Web Assets
         run: |
           mkdir www
           mv index.html www/
 
+      # 2. Add Android Platform
       - name: Add Android Platform
         run: npx cap add android
 
-      # --- SAFER PERMISSION INJECTION ---
-      # This inserts permissions immediately after the opening <manifest> tag
+      # 3. FORCE APP NAME TO 'AERO'
+      # This overwrites the default name in the Android strings file
+      - name: Set App Name to AERO
+        run: |
+          STRINGS_XML=android/app/src/main/res/values/strings.xml
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">AERO<\/string>/' $STRINGS_XML
+          grep "app_name" $STRINGS_XML  # Prints the new name to the logs to verify
+
+      # 4. INJECT CAMERA PERMISSIONS
       - name: Inject Camera Permissions
         run: |
           MANIFEST_FILE=android/app/src/main/AndroidManifest.xml
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' $MANIFEST_FILE
           cat $MANIFEST_FILE
 
+      # 5. OVERWRITE LOGO (Requires logo.png in your repo)
+      - name: Update App Icon
+        run: |
+          if [ -f logo.png ]; then
+            echo "Found logo.png, updating app icons..."
+            RES_DIR=android/app/src/main/res
+            # Standard Icons
+            cp logo.png $RES_DIR/mipmap-mdpi/ic_launcher.png
+            cp logo.png $RES_DIR/mipmap-hdpi/ic_launcher.png
+            cp logo.png $RES_DIR/mipmap-xhdpi/ic_launcher.png
+            cp logo.png $RES_DIR/mipmap-xxhdpi/ic_launcher.png
+            cp logo.png $RES_DIR/mipmap-xxxhdpi/ic_launcher.png
+            # Round Icons (used by newer Android versions)
+            cp logo.png $RES_DIR/mipmap-mdpi/ic_launcher_round.png
+            cp logo.png $RES_DIR/mipmap-hdpi/ic_launcher_round.png
+            cp logo.png $RES_DIR/mipmap-xhdpi/ic_launcher_round.png
+            cp logo.png $RES_DIR/mipmap-xxhdpi/ic_launcher_round.png
+            cp logo.png $RES_DIR/mipmap-xxxhdpi/ic_launcher_round.png
+          else
+            echo "Warning: logo.png not found in repository. Skipping icon update."
+          fi
+
+      # 6. Build the APK
       - name: Build APK
         run: |
           npx cap sync
           cd android
           ./gradlew assembleDebug
 
+      # 7. Upload the Result
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
