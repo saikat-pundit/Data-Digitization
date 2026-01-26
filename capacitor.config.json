@@ -1,6 +1,20 @@
 {
-  "appId": "com.uploader.app",
-  "appName": "AERO", 
+  "appId": "com.example.app",
+  "appName": "AERO",
   "webDir": "www",
-  "bundledWebRuntime": false
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 300,
+      "backgroundColor": "#ffffffff",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    }
+  }
 }
