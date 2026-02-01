@@ -1371,101 +1371,6 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
   }, 500);
 }
 
-function submitVerification(statusText,idValue){
-  const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzln6bsC6nVnjc0NR88jz0J_d6v-ZuCgGPj1ec1y82OHGf8-JDGjrr3kukrsJhGBwEJIw/exec';
-  const now=new Date(),day=now.getDate(),month=now.toLocaleString('en-GB',{month:'short'}),year=now.getFullYear();
-  let hours=now.getHours(),minutes=now.getMinutes().toString().padStart(2,'0'),ampm=hours>=12?'pm':'am';
-  hours=hours%12;hours=hours?hours:12;
-  const formattedTime=`${day} ${month} ${year} ${hours}:${minutes}${ampm}`;
-  const payload={mode:'VERIFICATION_SYSTEM',col0:idValue,status:statusText,timestamp:formattedTime};
-  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',cache:'no-cache',headers:{'Content-Type':'application/json',},body:JSON.stringify(payload)})
-  .then(()=>{alert("Action recorded successfully.");location.reload();}).catch(err=>{console.error("Error:",err);alert("Error: "+err);});
-}
-
-function showTab(tabName,event){
-  document.querySelectorAll('.tab-content').forEach(tab=>{tab.classList.remove('active');});
-  document.querySelectorAll('.tab-btn').forEach(btn=>{btn.classList.remove('active');});
-  document.getElementById(`${tabName}-tab`).classList.add('active');
-  const clickedBtn = event.target.closest('.tab-btn');
-  if (clickedBtn) clickedBtn.classList.add('active');
-  else event.target.classList.add('active');
-  
-  if(tabName==='tracking'&&!document.getElementById('tracking-dropdown-1')) createTrackingForm();
-  if(tabName==='status'){
-    const statusFilter=document.getElementById('statusFilter');
-    if(statusFilter&&statusFilter.innerHTML===''){
-      if(csvData.length>0) createStatusDashboard();
-      else{
-        const statusDashboard=document.getElementById('statusDashboard');
-        if(statusDashboard){
-          statusDashboard.innerHTML='<div class="loading-spinner"><i class="fa fa-spinner fa-spin"></i> Loading data...</div>';
-          setTimeout(()=>{if(csvData.length>0) createStatusDashboard();},500);
-        }
-      }
-    }
-  }
-}
-
-window.addEventListener('beforeunload',()=>{
-  document.querySelectorAll('img').forEach(img=>{
-    if(img.src&&img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
-    img.src='';img.onload=null;img.onerror=null;
-  });
-  compressionQueue=[];
-  isCompressing=false;
-});
-
-// --- AUTHENTICATION & TIMER LOGIC ---
-const SESSION_DURATION = 60 * 60 * 1000; // 1 Hour
-
-function attemptLogin() {
-    const pwd = document.getElementById('appPassword').value;
-    const errorMsg = document.getElementById('loginError');
-    if (pwd === 'sosojojo') {
-        const loginTime = Date.now();
-        localStorage.setItem('app_login_time', loginTime);
-        startAppSession(loginTime);
-    } else {
-        errorMsg.style.display = 'block';
-        document.getElementById('appPassword').value = '';
-    }
-}
-
-function startAppSession(loginTime) {
-    document.getElementById('login-overlay').style.display = 'none';
-    document.getElementById('main-app').style.display = 'block';
-    
-    // Start Timer Interval
-    setInterval(() => {
-        const now = Date.now();
-        
-        // 1. Session Expiry Check
-        const timeLeft = SESSION_DURATION - (now - loginTime);
-        if (timeLeft <= 0) {
-            localStorage.removeItem('app_login_time');
-            location.reload(); 
-            return;
-        } else {
-            const minutes = Math.floor(timeLeft / 60000);
-            const seconds = Math.floor((timeLeft % 60000) / 1000);
-            document.getElementById('sessionTimerText').innerText = `Time Left: ${minutes}m ${seconds}s`;
-        }
-
-        // 2. Auto Memory Cleanup (Every 15 Minutes)
-        const timeSinceRefresh = now - pageLoadTime;
-        const cleanupInterval = 15 * 60 * 1000; // 15 Minutes
-
-        if (timeSinceRefresh > cleanupInterval) {
-            const modal = document.getElementById('confirmModal');
-            const isBusy = isCompressing || (modal && modal.style.display !== 'none');
-            if (!isBusy) {
-                console.log("Auto-reloading to free memory...");
-                location.reload(); 
-            }
-        }
-    }, 1000);
-}
-
 function freeUpMemory() {
   const images = document.querySelectorAll('.preview-img');
   images.forEach(img => {
@@ -1569,5 +1474,30 @@ function updateHeaderStats(latency, status) {
     }
 }
 startNetworkMonitor();
+
+window.onload = async function() {
+    // 1. Check Session
+    const storedTime = localStorage.getItem('app_login_time');
+    const now = Date.now();
+
+    if (storedTime && (now - storedTime < SESSION_DURATION)) {
+        // Session Valid -> Skip Login
+        startAppSession(parseInt(storedTime));
+    } else {
+        // Session Invalid -> Show Login (Default state is hidden app, visible overlay)
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('main-app').style.display = 'none';
+    }
+
+    // 2. Load Data
+    await loadCSVData();
+    
+    // 3. Set Default Tab to DOCUMENTS (Not Tracking)
+    // Find the documents tab button and click it
+    const docTabBtn = document.querySelector('button[onclick*="documents"]');
+    if(docTabBtn) {
+        showTab('documents', { target: docTabBtn });
+    }
+};
 </script>
 </html>
