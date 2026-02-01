@@ -6,10 +6,33 @@
     <title>AERO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
+        /* --- CORE LAYOUT & THEME --- */
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #333; }
+        .main-container { max-width: 600px; margin: 0 auto; padding: 15px; padding-bottom: 80px; min-height: 100vh; }
+        .form-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; border: 1px solid #ffffff; }
+        
+        /* --- HEADER & CONTROLS (Glassmorphism + Carousel) --- */
+        .header-controls { display: grid; grid-template-columns: 1fr auto; gap: 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 10px 16px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid rgba(255,255,255,0.5); align-items: center; min-height: 50px; }
+        .info-display { position: relative; height: 20px; overflow: hidden; display: flex; align-items: center; }
+        .info-item { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateY(10px); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); font-size: 13px; font-weight: 600; color: #2c3e50; white-space: nowrap; }
+        .info-item.active { opacity: 1; transform: translateY(0); }
+        .timer-text { color: #e67e22; font-weight: 700; letter-spacing: 0.5px; }
+        .net-text { color: #2c3e50; }
+        .speed-text { color: #3498db; }
+        .ping-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #bdc3c7; box-shadow: 0 0 0 2px rgba(189, 195, 199, 0.2); }
+        .status-good { color: #27ae60; } .status-good .ping-dot { background-color: #27ae60; box-shadow: 0 0 0 2px rgba(39,174,96,0.2); }
+        .status-avg { color: #f39c12; } .status-avg .ping-dot { background-color: #f39c12; box-shadow: 0 0 0 2px rgba(243,156,18,0.2); }
+        .status-bad { color: #e74c3c; animation: flash-text 1s infinite; } .status-bad .ping-dot { background-color: #e74c3c; box-shadow: 0 0 0 2px rgba(231,76,60,0.2); }
+        @keyframes flash-text { 50% { opacity: 0.5; } }
+        .refresh-btn { background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: 1px solid #dee2e6; border-radius: 12px; font-size: 14px; cursor: pointer; color: #2c3e50; padding: 8px 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .app-header { background: linear-gradient(135deg, #2c3e50, #3498db); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white; box-shadow: 0 8px 20px rgba(44, 62, 80, 0.3); text-align: center; }
+        .animated-title, .app-header .fa-database { margin: 0; font-size: 2em; color: white; background: linear-gradient( 90deg, #FF0000, #FF6600, #FFD700, #00FF00, #00FFFF, #0080FF, #8000FF, #FF00FF, #FF0080, #FF0000 ); background-size: 300% 100%; border-radius: 5px; display: block; max-width: 90%; white-space: normal; line-height: 1.4; position: sticky; top: 0; z-index: 10; animation: flow-colors 0.5s ease-in-out infinite alternate; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        @keyframes flow-colors { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+
+        /* --- FORM ELEMENTS --- */
         .form-field { margin-bottom: 18px; width: 100%; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
         .form-field label { display: block; font-weight: 600; margin-bottom: 8px; color: #000; font-size: 14px; }
         .searchable-dropdown-wrapper, .status-filter-container { position: relative; width: 100%; max-width: 300px; margin-bottom: 20px; text-align: left; }
-        .post-body, h3 { color: black; }
         .search-input, .dropdown-select, .file-input, .datetime-field, .docname-input, .status-filter-dropdown, .tracking-dropdown { width: 100%; max-width: 300px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; background: #fff; color: black; font-weight: bold; }
         .datetime-field { background-color: #f8f9fa; color: #666; cursor: not-allowed; }
         .docname-input { margin-top: 8px; border: 1px dashed #007bff; }
@@ -95,142 +118,16 @@
         .modal-content { animation: modalSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .confirm-btn:hover, .cancel-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .documents-list::-webkit-scrollbar { width: 6px; }
-        .documents-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .documents-list::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
-        .documents-list::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
-        
-        /* --- APP HEADER ANIMATION --- */
-        .animated-title, .app-header .fa-database { margin: 0; font-size: 2em; color: white; background: linear-gradient( 90deg, #FF0000, #FF6600, #FFD700, #00FF00, #00FFFF, #0080FF, #8000FF, #FF00FF, #FF0080, #FF0000 ); background-size: 300% 100%; border-radius: 5px; display: block; max-width: 90%; white-space: normal; line-height: 1.4; position: sticky; top: 0; z-index: 10; animation: flow-colors 0.5s ease-in-out infinite alternate; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
-        @keyframes flow-colors { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
-        .app-header { border-radius: 10px; margin-bottom: 20px; }
-        .app-header .fa-database { font-size: 2em; }
+        .lock-container { background: #f8f9fa; padding: 5px 10px; border-radius: 4px; border: 1px solid #e0e0e0; }
+        .fa-lock, .fa-unlock { transition: all 0.3s ease; }
+        .fa-lock:hover { transform: scale(1.1); }
+        .fa-unlock:hover { transform: rotate(15deg); }
 
         /* --- LOGIN SCREEN --- */
-        #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #2c3e50; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .login-box {
-            background: white; padding: 30px; border-radius: 12px; width: 85%; max-width: 320px;
-            text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .login-input {
-            width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd;
-            border-radius: 6px; font-size: 16px; text-align: center;
-            box-sizing: border-box; 
-        }
-        .login-btn {
-            width: 100%; padding: 12px; background: #27ae60; color: white;
-            border: none; border-radius: 6px; font-size: 16px; font-weight: bold;
-        }
-        
-        /* --- GLASSMORPHIC HEADER --- */
-.header-controls {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 10px 16px;
-    border-radius: 16px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    border: 1px solid rgba(255,255,255,0.5);
-    align-items: center;
-    min-height: 50px; /* Prevents jumping during rotation */
-}
-
-/* --- ROTATING INFO CAROUSEL --- */
-.info-display {
-    position: relative;
-    height: 20px; /* Fixed height for the text */
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-}
-
-.info-item {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 13px;
-    font-weight: 600;
-    color: #2c3e50;
-    white-space: nowrap;
-}
-
-/* Active State (Visible) */
-.info-item.active {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Specific Styles for Metrics */
-.timer-text { color: #e67e22; font-weight: 700; letter-spacing: 0.5px; }
-.net-text   { color: #2c3e50; }
-.speed-text { color: #3498db; }
-
-.ping-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: #bdc3c7;
-    box-shadow: 0 0 0 2px rgba(189, 195, 199, 0.2);
-}
-
-/* Network Health Colors */
-.status-good { color: #27ae60; }
-.status-good .ping-dot { background-color: #27ae60; box-shadow: 0 0 0 2px rgba(39,174,96,0.2); }
-.status-avg  { color: #f39c12; }
-.status-avg .ping-dot  { background-color: #f39c12; box-shadow: 0 0 0 2px rgba(243,156,18,0.2); }
-.status-bad  { color: #e74c3c; animation: flash-text 1s infinite; }
-.status-bad .ping-dot  { background-color: #e74c3c; box-shadow: 0 0 0 2px rgba(231,76,60,0.2); }
-
-@keyframes flash-text { 50% { opacity: 0.5; } }
-
-/* Refresh Button */
-.refresh-btn {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    font-size: 14px;
-    cursor: pointer;
-    color: #2c3e50;
-    padding: 8px 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-      .lock-container {
-  background: #f8f9fa;
-  padding: 5px 10px;
-  border-radius: 4px;
-  border: 1px solid #e0e0e0;
-}
-
-.fa-lock, .fa-unlock {
-  transition: all 0.3s ease;
-}
-
-.fa-lock:hover {
-  transform: scale(1.1);
-}
-
-.fa-unlock:hover {
-  transform: rotate(15deg);
-}
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 30px; border-radius: 12px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .login-input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; text-align: center; box-sizing: border-box; }
+        .login-btn { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -248,29 +145,24 @@
         <div class="main-container">
             
             <div class="header-controls">
-    
-    <div class="info-display">
-        
-        <div class="info-item active" id="infoSession">
-            <i class="fa fa-clock-o timer-text"></i>
-            <span class="timer-text" id="sessionTimerText">CHECKING...</span>
-        </div>
-
-        <div class="info-item" id="infoNet">
-            <span class="ping-dot" id="pingDot"></span>
-            <span class="net-text" id="netText">Analyzing Net...</span>
-        </div>
-
-        <div class="info-item" id="infoSpeed">
-            <i class="fa fa-tachometer speed-text"></i>
-            <span class="speed-text" id="speedText">BW: Calculating...</span>
-        </div>
-    </div>
-
-    <button class="refresh-btn" onclick="safeReload()" id="refreshBtn">
-        <i class="fa fa-refresh"></i> Refresh
-    </button>
-</div>
+                <div class="info-display">
+                    <div class="info-item active" id="infoSession">
+                        <i class="fa fa-clock-o timer-text"></i>
+                        <span class="timer-text" id="sessionTimerText">CHECKING...</span>
+                    </div>
+                    <div class="info-item" id="infoNet">
+                        <span class="ping-dot" id="pingDot"></span>
+                        <span class="net-text" id="netText">Analyzing Net...</span>
+                    </div>
+                    <div class="info-item" id="infoSpeed">
+                        <i class="fa fa-tachometer speed-text"></i>
+                        <span class="speed-text" id="speedText">BW: Calculating...</span>
+                    </div>
+                </div>
+                <button class="refresh-btn" onclick="safeReload()" id="refreshBtn">
+                    <i class="fa fa-refresh"></i> Refresh
+                </button>
+            </div>
 
             <header class="app-header">
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -323,6 +215,7 @@ let pageLoadTime = Date.now();
 const LOCK_STORAGE_KEY = 'csv_lock_state';
 let currentInfoIndex = 0;
 const infoItems = ['infoSession', 'infoNet', 'infoSpeed'];
+
 function getLockState() {
   const saved = localStorage.getItem(LOCK_STORAGE_KEY);
   return saved ? JSON.parse(saved) : {};
@@ -445,7 +338,8 @@ function createImageField(container, header, columnIndex) {
     container.appendChild(nameInp);
   }
 }
-// [ALL YOUR OTHER FUNCTIONS REMAIN EXACTLY THE SAME BELOW]
+
+// [MAIN LOGIC]
 async function loadCSVData(){
   try{
     const response=await fetch(csvUrl);
@@ -665,6 +559,7 @@ function createSubmitButton(){
   btn.type='submit'; btn.textContent='Submit'; btn.className='submit-btn'; btn.id='mainSubmitBtn';
   form.appendChild(btn);
 }
+
 function setupFormSubmission(){
   form.onsubmit=(e)=>{
     e.preventDefault();
@@ -678,11 +573,9 @@ function setupFormSubmission(){
     let missingMandatory = false;
     
     mandatoryIndices.forEach(idx => {
-        // Check for Dropdown
         const drop = document.getElementById(`dropdown-${idx}`);
         if(drop && !drop.value) missingMandatory = true;
 
-        // Check for File Input
         const fileInp = document.getElementById(`file-${idx}`);
         if(fileInp && fileInp.files.length === 0 && !fileInp.compressedFile) missingMandatory = true;
     });
@@ -691,115 +584,16 @@ function setupFormSubmission(){
       alert("Please complete all Mandatory fields (marked with *) including required Photos."); 
       return; 
     }
-    const modal = document.getElementById('confirmModal');
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header" style="text-align: center;">
-          <h3 style="margin: 0; color: #2c3e50;">Processing Images...</h3>
-          <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 14px;" id="statusMsg">Optimizing for fast upload</p>
-        </div>
-        
-        <div class="modal-body" style="background: #f8f9fa; border-radius: 8px; margin: 15px 0;">
-           <div style="padding: 10px; border-bottom: 1px solid #ddd;">
-             <strong>Elector:</strong> ${dropdown3.value}
-           </div>
-        </div>
-        
-        <div class="documents-list" style="max-height: 200px; overflow-y: auto; margin: 15px 0; background: white; border: 1px solid #eee;">
-          <ul id="uploadSummary" style="list-style: none; padding: 0; margin: 0;"></ul>
-        </div>
-        
-        <div class="modal-footer" style="display: flex; gap: 10px; margin-top: 20px;">
-          <button id="confirmUploadBtn" disabled style="flex: 1; padding: 10px; background: #95a5a6; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: not-allowed; opacity: 0.7;">
-            <i class="fa fa-spinner fa-spin"></i> Please Wait...
-          </button>
-          <button id="cancelUploadBtn" class="cancel-btn" style="flex: 1; padding: 10px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer;">
-            Cancel
-          </button>
-        </div>
-      </div>
-    `;
-
-    modal.style.display='flex';
     
-    const confirmBtn = document.getElementById('confirmUploadBtn');
-    const cancelBtn = document.getElementById('cancelUploadBtn');
-    const summaryList = document.getElementById('uploadSummary');
-    const statusMsg = document.getElementById('statusMsg');
-    const checkInterval = setInterval(() => {
-      let allReady = true;
-      let anyError = false;
-      let pendingCount = 0;
-      summaryList.innerHTML = ''; 
-      
-      limitedHeaders.forEach((h,i)=>{
-        const f = document.getElementById(`file-${i}`);
-        if(f && f.files.length > 0) {
-          const li = document.createElement('li');
-          li.style.padding = '8px';
-          li.style.borderBottom = '1px solid #f0f0f0';
-          li.style.display = 'flex';
-          li.style.alignItems = 'center';
-          li.style.justifyContent = 'space-between';
-          
-          let icon = '';
-          let color = '#333';
-          
-          if (f.compressedFile) {
-             icon = '<i class="fa fa-check-circle" style="color: #2ecc71;"></i>';
-             li.style.background = '#fafffa';
-          } else if (f.compressionFailed) {
-             icon = '<i class="fa fa-exclamation-triangle" style="color: #e74c3c;"></i>';
-             color = '#e74c3c';
-             allReady = false;
-             anyError = true;
-             li.style.background = '#fff0f0';
-          } else {
-             icon = '<i class="fa fa-spinner fa-spin" style="color: #3498db;"></i>';
-             allReady = false;
-             pendingCount++;
-          }
-          
-          li.innerHTML = `<span style="color:${color}; font-size:14px;">${h}</span> ${icon}`;
-          summaryList.appendChild(li);
-        }
-      });
-      if (allReady) {
-        confirmBtn.disabled = false;
-        confirmBtn.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
-        confirmBtn.style.cursor = 'pointer';
-        confirmBtn.style.opacity = '1';
-        confirmBtn.innerHTML = '<i class="fa fa-cloud-upload"></i>Upload';
-        let successCount = 0;
-        limitedHeaders.forEach((h,i)=>{
-             const f = document.getElementById(`file-${i}`);
-             if(f && (f.compressedFile || (f.files && f.files.length > 0))) successCount++;
-        });
-        statusMsg.textContent = `${successCount} Image(s) optimized and ready.`;
-        statusMsg.style.color = "#27ae60";
-        clearInterval(checkInterval); 
-      } else if (anyError) {
-        confirmBtn.innerHTML = '<i class="fa fa-exclamation-circle"></i> Fix Errors';
-        statusMsg.textContent = "Some images failed to optimize. Please re-select them.";
-        statusMsg.style.color = "#e74c3c";
-      } else {
-        statusMsg.textContent = `Optimizing... ${pendingCount} remaining`;
-      }
-      
-    }, 500);
-    confirmBtn.onclick = () => {
-        clearInterval(checkInterval);
-        finalSubmit();
-    };
-    
-    cancelBtn.onclick = () => {
-      clearInterval(checkInterval);
-      modal.style.display = 'none';
-    };
+    // Call the final submit function
+    window.finalSubmit();
   };
-  window.finalSubmit = async function() {
+}
+
+window.finalSubmit = async function() {
   const modal = document.getElementById('confirmModal');
   const modalContent = modal.querySelector('.modal-content');
+  const dropdown3=document.getElementById('dropdown-3'); // Re-fetch for modal
   
   // 1. Calculate Total Data Size (for "Intelligent" Speed display)
   let totalSizeKB = 0;
@@ -809,32 +603,35 @@ function setupFormSubmission(){
           totalSizeKB += fileInp.compressedFile.size / 1024;
       }
   });
-  // Add ~5KB overhead for text data
-  totalSizeKB += 5; 
+  totalSizeKB += 5; // Overhead
   const totalMB = (totalSizeKB / 1024).toFixed(2);
-  const avgSpeed = (totalSizeKB / 30).toFixed(0); // KB/s based on 30s timer
+  const avgSpeed = (totalSizeKB / 30).toFixed(0);
 
   let seconds = 30;
   
-  // Update Modal HTML with new Stats Container
-  modalContent.innerHTML = `
-    <div style="text-align:center;padding:20px;">
-      <h3 style="color:#2c3e50; margin-bottom:5px;">Uploading Securely...</h3>
-      
-      <div id="netStats" style="background:#f8f9fa; border-radius:8px; padding:8px; margin:10px 0; font-size:13px; color:#555; display:flex; justify-content:space-around; align-items:center;">
-         <span id="netType"><i class="fa fa-refresh fa-spin"></i> Analyzing Network...</span>
-         <span id="netSpeed" style="font-weight:bold;">0 KB/s</span>
-      </div>
+  modal.style.display='flex';
+  
+  modal.innerHTML = `
+      <div class="modal-content">
+        <div style="text-align:center;padding:10px;">
+          <h3 style="color:#2c3e50; margin-bottom:5px;">Uploading Securely...</h3>
+          <p style="font-size:14px;color:#555;">Elector: <b>${dropdown3.value}</b></p>
+          
+          <div id="netStats" style="background:#f8f9fa; border-radius:8px; padding:8px; margin:10px 0; font-size:13px; color:#555; display:flex; justify-content:space-around; align-items:center;">
+             <span id="netType"><i class="fa fa-refresh fa-spin"></i> Analyzing...</span>
+             <span id="netSpeed" style="font-weight:bold;">0 KB/s</span>
+          </div>
 
-      <div class="timer-display" id="timer" style="font-size:36px; color:#3498db;">30</div>
-      <p style="margin:0; color:#999; font-size:12px;">seconds remaining</p>
-      
-      <div class="progress-container" style="height:12px; background:#e0e0e0; margin:15px 0;">
-        <div class="progress-bar" id="progressBar" style="height:100%; background:linear-gradient(90deg, #3498db, #2ecc71);"></div>
-      </div>
-      
-      <div class="upload-status" id="uploadStatus" style="font-size:14px; font-weight:600;">Initializing...</div>
-    </div>`;
+          <div class="timer-display" id="timer" style="font-size:36px; color:#3498db;">30</div>
+          <p style="margin:0; color:#999; font-size:12px;">seconds remaining</p>
+          
+          <div class="progress-container" style="height:12px; background:#e0e0e0; margin:15px 0;">
+            <div class="progress-bar" id="progressBar" style="height:100%; background:linear-gradient(90deg, #3498db, #2ecc71);"></div>
+          </div>
+          
+          <div class="upload-status" id="uploadStatus" style="font-size:14px; font-weight:600;">Initializing...</div>
+        </div>
+      </div>`;
 
   const timerInterval = setInterval(() => {
     seconds--;
@@ -853,22 +650,21 @@ function setupFormSubmission(){
       if (conn) {
           const type = conn.effectiveType ? conn.effectiveType.toUpperCase() : '4G';
           if (type.includes('2G')) {
-              netColor = '#e74c3c'; // Red for weak signal
+              netColor = '#e74c3c';
               netIcon = '<i class="fa fa-exclamation-triangle"></i>';
               netText = `${type} (Weak)`;
           } else if (type.includes('3G')) {
-              netColor = '#f39c12'; // Orange
+              netColor = '#f39c12';
               netIcon = '<i class="fa fa-signal"></i>';
-              netText = `${type} (Moderate)`;
+              netText = `${type} (Mod)`;
           } else {
               netText = `${type} (Strong)`;
           }
       }
 
-      // Update UI with calculated stats
       document.getElementById('netType').innerHTML = `<span style="color:${netColor}">${netIcon} ${netText}</span>`;
       document.getElementById('netSpeed').textContent = `${avgSpeed} KB/s`;
-      document.getElementById('uploadStatus').textContent = `Sending ${totalMB} MB of data... ${Math.round(progress)}%`;
+      document.getElementById('uploadStatus').textContent = `Sending ${totalMB} MB... ${Math.round(progress)}%`;
     }
     
     if (seconds <= 0) clearInterval(timerInterval);
@@ -893,16 +689,15 @@ function setupFormSubmission(){
         const nInp = document.getElementById(`docname-${i}`);
         payload[h] = nInp && nInp.value.trim() !== "" ? `${b64}|${nInp.value.trim()}` : b64;
       }
-
       processedFields++;
-      // Just update the status text, let the timer handle the visual bar for smoothness
     }
 
     compressionQueue = [];
     isCompressing = false;
 
     document.getElementById('uploadStatus').textContent = 'Finalizing...';
-      const scriptUrls = [
+    
+    const scriptUrls = [
           'https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec',
           'https://script.google.com/macros/s/AKfycbx5kRz1YbR7oHdwIDin35pzIKzdbjTUsHsyy_2XGmAXyRn8uqbGEuM8KB6i3AVntiug/exec', 
           'https://script.google.com/macros/s/AKfycbzsnYlLx7s7QYgC1vngiiU7Wz1vY8Bg1EOzThSpLymTAT0xbw0CRBlfouhA6YBvJEoEng/exec',
@@ -913,8 +708,9 @@ function setupFormSubmission(){
           'https://script.google.com/macros/s/AKfycbzSdAzv36YP5gH6j2Ju0YzrFDS9Q9QOCsFfVBSA6cRzExwP4JMjelcTAlYLYCsMPk65/exec',
           'https://script.google.com/macros/s/AKfycbxmuQhSG0OmF5eRLl4NBUo933MV8H_K47uhtnZ_NXYUaNVer5IumqybjW38EStoHBpRQg/exec',
           'https://script.google.com/macros/s/AKfycbxoPS2n4V-oWqqnPQ6iJt-apGJAmR83-vxxHfJJ7bpCXWwCzOIGJW1iXgvzQxlcTLNQZw/exec'
-      ];
-      const randomUrl = scriptUrls[Math.floor(Math.random() * scriptUrls.length)];
+    ];
+    const randomUrl = scriptUrls[Math.floor(Math.random() * scriptUrls.length)];
+
     await fetch(randomUrl, {
       method: 'POST',
       mode: 'no-cors',
@@ -927,10 +723,7 @@ function setupFormSubmission(){
 
     setTimeout(() => {
       alert("Success! Data Uploaded.");
-      
-      // Cleanup Memory
       freeUpMemory();
-      
       document.getElementById('confirmModal').style.display = 'none';
       location.reload(); 
     }, 100);
@@ -946,26 +739,19 @@ function setupFormSubmission(){
     }, 100);
   }
 };
-}
 
-// ... [Tracking and Status Functions Preserved Below] ...
+// --- TRACKING & STATUS ---
 function createStatusDashboard(){
   const statusFilter = document.getElementById('statusFilter');
   const statusTable = document.getElementById('statusTable');
   const statusCounts = document.getElementById('statusCounts');
   
-  if(!statusFilter || !statusTable || !statusCounts){
-    console.error('Status dashboard elements not found!');
-    return;
-  }
-  
-  console.log('Creating status dashboard with', limitedCSVData.length, 'rows');
+  if(!statusFilter || !statusTable || !statusCounts) return;
   
   statusFilter.innerHTML = '';
   statusTable.innerHTML = '';
   statusCounts.innerHTML = '';
   
-  // Create filter container
   const filterContainer = document.createElement('div');
   filterContainer.className = 'status-filter-container';
   
@@ -1021,7 +807,7 @@ function updateStatusCountsOnly(filterValue) {
   let col22FilledCount = 0;
   
   filteredRows.forEach(row => {
-    const val3 = row[0] || '';
+    const val3 = row[3] || '';
     if(val3.trim() !== '') uniqueCol3.add(val3);
     
     const val20 = row[20] || '';
@@ -1037,7 +823,6 @@ function updateStatusCountsOnly(filterValue) {
     if(val22.trim() !== '') col22FilledCount++;
   });
   
-  // Build status counts HTML
   let countsHTML = '<div class="status-counts-container">';
   countsHTML += `<div class="count-box"><strong>Elector:</strong> ${uniqueCol3.size}</div>`;
   countsHTML += `<div class="count-box"><strong>Completed:</strong> ${col20FilledCount}</div>`;
@@ -1073,31 +858,29 @@ function updateStatusTable(filterValue){
   tableHTML += '</tr></thead><tbody>';
   
   filteredRows.forEach(row => {
-  const serialNo = row[2] || '';
-  const name = row[3] || '';
-  const nameWithSerial = serialNo ? `${serialNo}. ${name}` : name;
-  const col20 = row[20] || '';
-  const col21 = row[21] || '';
-  const col22 = row[22] || '';
-  
-  let rowClass = '';
-  if (!col22.trim()) {
-    rowClass = 'row-missing-eci';
-  }
-  if (col21.includes('REJECTED')) {
-    rowClass = 'row-rejected';
-  }
-  tableHTML += `<tr class="${rowClass}">`;
-  tableHTML += `<td>${nameWithSerial}</td>`;
-  tableHTML += `<td>${col20}</td>`;
-  tableHTML += `<td>${col21}</td>`;
-  tableHTML += `<td>${col22}</td>`;
-  tableHTML += '</tr>';
-});
+    const serialNo = row[2] || '';
+    const name = row[3] || '';
+    const nameWithSerial = serialNo ? `${serialNo}. ${name}` : name;
+    const col20 = row[20] || '';
+    const col21 = row[21] || '';
+    const col22 = row[22] || '';
+    
+    let rowClass = '';
+    if (!col22.trim()) { rowClass = 'row-missing-eci'; }
+    if (col21.includes('REJECTED')) { rowClass = 'row-rejected'; }
+    
+    tableHTML += `<tr class="${rowClass}">`;
+    tableHTML += `<td>${nameWithSerial}</td>`;
+    tableHTML += `<td>${col20}</td>`;
+    tableHTML += `<td>${col21}</td>`;
+    tableHTML += `<td>${col22}</td>`;
+    tableHTML += '</tr>';
+  });
   
   tableHTML += '</tbody></table></div>';
   statusTable.innerHTML = tableHTML;
 }
+
 function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -1114,185 +897,14 @@ function fileToBase64(file){
   });
 }
 
-async function compressImageTo150KB(file, element) {
-  return new Promise(resolve => {
-    if (shouldDelayCompression()) {
-      console.log("Memory high, delaying compression queue addition");
-      setTimeout(() => {
-        compressionQueue.push({ file, element, resolve });
-        if (!isCompressing) processCompressionQueue();
-      }, 2000);
-    } else {
-      compressionQueue.push({ file, element, resolve });
-      if (!isCompressing) processCompressionQueue();
-    }
-  });
-}
-
-async function processCompressionQueue() {
-  if (isCompressing || compressionQueue.length === 0) return;
-  
-  if (compressionQueue.length > 1 && shouldDelayCompression()) {
-    setTimeout(processCompressionQueue, 1000); 
-    return;
-  }
-  
-  isCompressing = true;
-  const { file, element, resolve } = compressionQueue.shift();
-  let bitmap = null, canvas = null, img = null;
-  
-  element.isProcessing = true;
-  element.compressionFailed = false;
-
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const MAX_DIMENSION = isMobile ? 800 : 1200; 
-  const COOL_DOWN_DELAY = isMobile ? 1000 : 200;
-
-  try {
-    if (file.size <= 200 * 1024 && file.type === 'image/webp') {
-      element.compressedFile = file;
-      throw new Error("ALREADY_SMALL"); 
-    }
-
-    if (window.createImageBitmap) {
-       try {
-         bitmap = await createImageBitmap(file, { 
-            resizeWidth: MAX_DIMENSION, 
-            resizeQuality: 'medium' 
-         });
-         
-         let targetWidth = bitmap.width;
-         let targetHeight = bitmap.height;
-
-         canvas = document.createElement('canvas');
-         canvas.width = targetWidth;
-         canvas.height = targetHeight;
-         const ctx = canvas.getContext('2d');
-         
-         ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
-
-       } catch (bitmapError) {
-         console.warn("Bitmap API failed", bitmapError);
-         throw bitmapError;
-       }
-    } else {
-       throw new Error("Bitmap API not supported");
-    }
-
-    let dataUrl = canvas.toDataURL('image/webp', 0.5);
-    
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    dataUrl = null; 
-
-    if (blob.size > 0) {
-       const newName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
-       element.compressedFile = new File([blob], newName, { type: 'image/webp' });
-       element.compressionFailed = false;
-    } else {
-       throw new Error("Zero byte result");
-    }
-
-  } catch (error) {
-    if (error.message === "ALREADY_SMALL") {
-        element.isProcessing = false;
-        isCompressing = false;
-        resolve();
-        setTimeout(processCompressionQueue, COOL_DOWN_DELAY);
-        return;
-    }
-
-    if (!element.compressedFile) {
-        console.log("Attempting legacy fallback for: " + file.name);
-        try {
-           await processLegacyFallback(file, element, MAX_DIMENSION);
-        } catch (legacyError) {
-           console.error('Final Failure:', legacyError);
-           element.compressedFile = null; 
-           element.compressionFailed = true; 
-        }
-    } else {
-       console.error('Processing Error:', error);
-       element.compressedFile = null; 
-       element.compressionFailed = true; 
-    }
-  } finally {
-    element.isProcessing = false;
-    if (bitmap) bitmap.close();
-    cleanupResources(img, canvas);
-    isCompressing = false;
-    resolve();
-    setTimeout(processCompressionQueue, COOL_DOWN_DELAY);
-  }
-}
-
-async function processLegacyFallback(file, element, MAX_DIMENSION) {
-    let img = new Image();
-    img.src = URL.createObjectURL(file);
-    await new Promise((r, e) => { img.onload = r; img.onerror = e; });
-    
-    // Resize logic
-    let w = img.width, h = img.height;
-    if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
-       if (w > h) { h = (h * MAX_DIMENSION) / w; w = MAX_DIMENSION; }
-       else { w = (w * MAX_DIMENSION) / h; h = MAX_DIMENSION; }
-    }
-    
-    let canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    let ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, w, h);
-    
-    let dUrl = canvas.toDataURL('image/webp', 0.5);
-    let res = await fetch(dUrl);
-    let blob = await res.blob();
-    
-    const newName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
-    element.compressedFile = new File([blob], newName, { type: 'image/webp' });
-    element.compressionFailed = false;
-    
-    // Mini cleanup
-    URL.revokeObjectURL(img.src);
-    img = null; canvas.width=0; canvas=null;
-}
-
-function cleanupResources(img, canvas) {
-  if (img) {
-    if (img.src && img.src.startsWith('blob:')) {
-      URL.revokeObjectURL(img.src);
-    }
-    img.src = ''; 
-    img.onload = null;
-    img.onerror = null;
-    img = null; 
-  }
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-    canvas.width = 0;
-    canvas.height = 0;
-    if (canvas.parentNode) {
-      canvas.parentNode.removeChild(canvas);
-    }
-    canvas = null; 
-  }
-  if (window.gc) {
-    try {
-      window.gc();
-    } catch (e) {
-    }
-  }
-}
-
+// --- TRACKING FORM LOGIC ---
 function createTrackingForm() {
   const trackingForm = document.getElementById('trackingForm');
   trackingForm.innerHTML = '';
   const dropdownsContainer = document.createElement('div');
   dropdownsContainer.className = 'tracking-dropdowns';
 
-  // --- 1. Column 1 (Dynamic Dropdown) with Lock ---
+  // 1. Column 1 (Dynamic Dropdown) with Lock
   const container1 = document.createElement('div');
   container1.className = 'form-field';
   const label1 = document.createElement('label');
@@ -1310,9 +922,7 @@ function createTrackingForm() {
   select1.className = 'tracking-dropdown';
   select1.innerHTML = `<option value="">-- Select ${headers[1]} --</option>`;
 
-  const uniqueCol1 = [...new Set(limitedCSVData.map(row => row[1]))]
-    .filter(v => v)
-    .sort((a, b) => {
+  const uniqueCol1 = [...new Set(limitedCSVData.map(row => row[1]))].filter(v => v).sort((a, b) => {
       const numA = parseInt(a), numB = parseInt(b);
       if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
       return a.localeCompare(b);
@@ -1333,11 +943,11 @@ function createTrackingForm() {
   const savedTrackingLock = lockState[trackingLockKey];
 
   if (savedTrackingLock && savedTrackingLock.isLocked) {
-  isTrackingLocked = true;
-  trackingLockedValue = savedTrackingLock.value;
-  select1.value = trackingLockedValue;
-  select1.disabled = true; // ADD THIS LINE
-}
+    isTrackingLocked = true;
+    trackingLockedValue = savedTrackingLock.value;
+    select1.value = trackingLockedValue;
+    select1.disabled = true;
+  }
 
   const trackingLockIcon = document.createElement('i');
   trackingLockIcon.className = isTrackingLocked ? 'fa fa-lock' : 'fa fa-unlock';
@@ -1347,59 +957,44 @@ function createTrackingForm() {
   trackingLockIcon.title = 'Click to lock/unlock selection for tracking';
 
   trackingLockIcon.onclick = function (e) {
-  e.stopPropagation();
-
-  if (isTrackingLocked) {
-    // UNLOCK LOGIC - Keep as is
-    isTrackingLocked = false;
-    trackingLockedValue = '';
-    this.className = 'fa fa-unlock';
-    this.style.color = '#95a5a6';
-    select1.disabled = false;
-
-    for (let i = 2; i <= 3; i++) {
-      const downstreamSelect = document.getElementById(`tracking-dropdown-${i}`);
-      if (downstreamSelect) {
-        downstreamSelect.innerHTML = `<option value="">-- Select ${headers[i]} --</option>`;
-        downstreamSelect.disabled = true;
+    e.stopPropagation();
+    if (isTrackingLocked) {
+      isTrackingLocked = false;
+      trackingLockedValue = '';
+      this.className = 'fa fa-unlock';
+      this.style.color = '#95a5a6';
+      select1.disabled = false;
+      for (let i = 2; i <= 3; i++) {
+        const downstreamSelect = document.getElementById(`tracking-dropdown-${i}`);
+        if (downstreamSelect) {
+          downstreamSelect.innerHTML = `<option value="">-- Select ${headers[i]} --</option>`;
+          downstreamSelect.disabled = true;
+        }
       }
+      document.getElementById('trackingResults').innerHTML = '';
+      const lockState = getLockState();
+      delete lockState[trackingLockKey];
+      saveLockState(lockState);
+    } else {
+      if (!select1.value) {
+        alert('Please select an option first before locking!');
+        return;
+      }
+      isTrackingLocked = true;
+      trackingLockedValue = select1.value;
+      this.className = 'fa fa-lock';
+      this.style.color = '#27ae60';
+      select1.disabled = true;
+      const lockState = getLockState();
+      lockState[trackingLockKey] = {
+        isLocked: true,
+        value: trackingLockedValue,
+        timestamp: Date.now()
+      };
+      saveLockState(lockState);
+      if (select1.value) updateTrackingDropdown(2);
     }
-    document.getElementById('trackingResults').innerHTML = '';
-
-    const lockState = getLockState();
-    delete lockState[trackingLockKey];
-    saveLockState(lockState);
-    
-    // Enable dropdown after unlocking
-    select1.disabled = false;
-  } else {
-    // LOCK LOGIC - Add disable dropdown
-    if (!select1.value) {
-      alert('Please select an option first before locking!');
-      return;
-    }
-
-    isTrackingLocked = true;
-    trackingLockedValue = select1.value;
-    this.className = 'fa fa-lock';
-    this.style.color = '#27ae60';
-    
-    // Disable dropdown when locked
-    select1.disabled = true;
-
-    const lockState = getLockState();
-    lockState[trackingLockKey] = {
-      isLocked: true,
-      value: trackingLockedValue,
-      timestamp: Date.now()
-    };
-    saveLockState(lockState);
-
-    if (select1.value) {
-      updateTrackingDropdown(2);
-    }
-  }
-};
+  };
 
   if (isTrackingLocked && trackingLockedValue) {
     setTimeout(() => {
@@ -1419,7 +1014,7 @@ function createTrackingForm() {
   container1.appendChild(dropdownWrapper1);
   dropdownsContainer.appendChild(container1);
 
-  // --- 2. Column 2 ---
+  // 2. Column 2
   const container2 = document.createElement('div');
   container2.className = 'form-field';
   const label2 = document.createElement('label');
@@ -1431,14 +1026,11 @@ function createTrackingForm() {
   select2.className = 'tracking-dropdown';
   select2.disabled = true;
   select2.innerHTML = `<option value="">-- Select ${headers[2]} --</option>`;
-
-  select2.onchange = () => {
-    updateTrackingDropdown(3);
-  };
+  select2.onchange = () => updateTrackingDropdown(3);
   container2.appendChild(select2);
   dropdownsContainer.appendChild(container2);
 
-  // --- 3. Column 3 ---
+  // 3. Column 3
   const container3 = document.createElement('div');
   container3.className = 'form-field';
   const label3 = document.createElement('label');
@@ -1450,7 +1042,6 @@ function createTrackingForm() {
   select3.className = 'tracking-dropdown';
   select3.disabled = true;
   select3.innerHTML = `<option value="">-- Select ${headers[3]} --</option>`;
-
   select3.onchange = () => {
     const val1 = document.getElementById('tracking-dropdown-1').value;
     const val2 = document.getElementById('tracking-dropdown-2').value;
@@ -1466,7 +1057,6 @@ function createTrackingForm() {
 function updateTrackingDropdown(columnIndex) {
   const select = document.getElementById(`tracking-dropdown-${columnIndex}`);
   if (!select) return;
-
   select.innerHTML = `<option value="">-- Select ${headers[columnIndex]} --</option>`;
   select.disabled = true;
 
@@ -1474,7 +1064,6 @@ function updateTrackingDropdown(columnIndex) {
     const trackingLockKey = `tracking_${1}`;
     const lockState = getLockState();
     const savedTrackingLock = lockState[trackingLockKey];
-
     if (savedTrackingLock && savedTrackingLock.isLocked) {
       const select1 = document.getElementById('tracking-dropdown-1');
       if (select1.value !== savedTrackingLock.value) {
@@ -1484,7 +1073,6 @@ function updateTrackingDropdown(columnIndex) {
   }
 
   const filters = {};
-
   if (columnIndex === 2) {
     const val1 = document.getElementById('tracking-dropdown-1').value;
     if (val1) filters[1] = val1;
@@ -1499,7 +1087,6 @@ function updateTrackingDropdown(columnIndex) {
   }
 
   const filteredRows = limitedCSVData.filter(row => Object.keys(filters).every(k => row[k] === filters[k]));
-
   const uniqueValues = [...new Set(filteredRows.map(row => row[columnIndex]))].filter(v => v).sort((a, b) => {
     const numA = parseInt(a), numB = parseInt(b);
     if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
@@ -1522,9 +1109,7 @@ function updateTrackingDropdown(columnIndex) {
         downstreamSelect.disabled = true;
       }
     }
-
     document.getElementById('trackingResults').innerHTML = '';
-
     if (uniqueValues.length === 1) {
       select.value = uniqueValues[0];
       if (columnIndex < 3) updateTrackingDropdown(columnIndex + 1);
@@ -1613,7 +1198,8 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
           img.style.display = 'none';
         };
         
-        img.onclick = () => window.open(url.includes('googleusercontent') ? `https://drive.google.com/file/d/${extractFileId(value)}/view` : url, '_blank');
+        const fileId = extractFileId(url) || '';
+        img.onclick = () => window.open(fileId ? `https://drive.google.com/file/d/${fileId}/view` : url, '_blank');
         imageContainer.appendChild(img);
         td.appendChild(imageContainer);
       };
@@ -1786,7 +1372,7 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
 }
 
 function submitVerification(statusText,idValue){
-  const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec';
+  const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzln6bsC6nVnjc0NR88jz0J_d6v-ZuCgGPj1ec1y82OHGf8-JDGjrr3kukrsJhGBwEJIw/exec';
   const now=new Date(),day=now.getDate(),month=now.toLocaleString('en-GB',{month:'short'}),year=now.getFullYear();
   let hours=now.getHours(),minutes=now.getMinutes().toString().padStart(2,'0'),ampm=hours>=12?'pm':'am';
   hours=hours%12;hours=hours?hours:12;
@@ -1830,19 +1416,16 @@ window.addEventListener('beforeunload',()=>{
 });
 
 // --- AUTHENTICATION & TIMER LOGIC ---
-const SESSION_DURATION = 60 * 60 * 1000; // 1 Hour in milliseconds
+const SESSION_DURATION = 60 * 60 * 1000; // 1 Hour
 
 function attemptLogin() {
     const pwd = document.getElementById('appPassword').value;
     const errorMsg = document.getElementById('loginError');
-    
     if (pwd === 'sosojojo') {
-        // Success
         const loginTime = Date.now();
         localStorage.setItem('app_login_time', loginTime);
         startAppSession(loginTime);
     } else {
-        // Fail
         errorMsg.style.display = 'block';
         document.getElementById('appPassword').value = '';
     }
@@ -1856,7 +1439,7 @@ function startAppSession(loginTime) {
     setInterval(() => {
         const now = Date.now();
         
-        // 1. Session Expiry Check (1 Hour)
+        // 1. Session Expiry Check
         const timeLeft = SESSION_DURATION - (now - loginTime);
         if (timeLeft <= 0) {
             localStorage.removeItem('app_login_time');
@@ -1865,32 +1448,27 @@ function startAppSession(loginTime) {
         } else {
             const minutes = Math.floor(timeLeft / 60000);
             const seconds = Math.floor((timeLeft % 60000) / 1000);
-            document.getElementById('sessionTimer').innerText = 
-                `Session Left: ${minutes}m ${seconds}s`;
+            document.getElementById('sessionTimerText').innerText = `Time Left: ${minutes}m ${seconds}s`;
         }
+
+        // 2. Auto Memory Cleanup (Every 15 Minutes)
         const timeSinceRefresh = now - pageLoadTime;
         const cleanupInterval = 15 * 60 * 1000; // 15 Minutes
 
         if (timeSinceRefresh > cleanupInterval) {
-            // Safety Check: Is the user busy?
-            // We check if "isCompressing" is true OR if the Upload Modal is open
             const modal = document.getElementById('confirmModal');
             const isBusy = isCompressing || (modal && modal.style.display !== 'none');
-
             if (!isBusy) {
                 console.log("Auto-reloading to free memory...");
-                location.reload(); // This clears RAM and prevents crashes
-            } else {
-                console.log("Memory cleanup delayed: User is busy.");
+                location.reload(); 
             }
         }
-
     }, 1000);
 }
+
 function freeUpMemory() {
   const images = document.querySelectorAll('.preview-img');
   images.forEach(img => {
-    // If the image has a blob URL, release it from memory
     if (img.src && img.src.startsWith('blob:')) {
       URL.revokeObjectURL(img.src);
     }
@@ -1911,119 +1489,38 @@ function freeUpMemory() {
   clearBtns.forEach(btn => {
     btn.style.display = 'none';
   });
-
-  // 6. Force the browser to run garbage collection (if available)
   if (window.gc) { try { window.gc(); } catch(e){} }
-
   console.log("Memory successfully cleared.");
 }
-    // --- 1. SAFE RELOAD FUNCTION ---
-// Prevents the "Webpage unavailable" screen by checking connection first
+
+// --- HEADER UTILS ---
 async function safeReload() {
     const btn = document.getElementById('refreshBtn');
     const originalText = btn.innerHTML;
-    
-    // UI Feedback
     btn.disabled = true;
     btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Checking...';
-
     try {
-        // Try to fetch the current page (lightweight HEAD request)
-        // If this fails, we are offline.
         await fetch(window.location.href, { method: 'HEAD', cache: 'no-cache' });
-        
-        // If we get here, Internet is working -> RELOAD
         location.reload();
-        
     } catch (e) {
-        // If we get here, NO Internet -> DO NOT RELOAD
         alert("No Internet Connection! Reload cancelled to protect data.");
-        
-        // Reset Button
         btn.disabled = false;
         btn.innerHTML = originalText;
-        
-        // Force update network badge to show "Offline"
-        updateNetworkUI(9999, 'offline');
-    }
-}
-
-// --- 2. INTELLIGENT NETWORK MONITOR ---
-function startNetworkMonitor() {
-    setInterval(async () => {
-        const start = Date.now();
-        let status = 'good';
-        let latency = 0;
-
-        try {
-            // "Ping" check: Fetch a tiny resource (Google Favicon is reliable & cached)
-            // Adding a random timestamp prevents browser caching
-            await fetch('https://www.google.com/favicon.ico?' + start, { 
-                mode: 'no-cors', 
-                cache: 'no-store' 
-            });
-            
-            latency = Date.now() - start;
-        } catch (e) {
-            status = 'offline';
-        }
-
-        updateNetworkUI(latency, status);
-        
-    }, 5000); // Check every 5 seconds
-}
-
-function updateNetworkUI(latency, status) {
-    const badge = document.getElementById('networkBadge');
-    const text = document.getElementById('networkText');
-    
-    // Remove old classes
-    badge.classList.remove('net-good', 'net-avg', 'net-bad');
-
-    // Get Connection Type (4G, WiFi, etc.)
-    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    const type = conn ? (conn.effectiveType || '4G').toUpperCase() : 'NET';
-
-    if (status === 'offline') {
-        badge.classList.add('net-bad');
-        text.innerHTML = `<i class="fa fa-wifi-slash"></i> Offline`;
-    } else if (latency > 1500) {
-        // Weak Signal
-        badge.classList.add('net-bad');
-        text.innerHTML = `${type} • ${latency}ms (Weak)`;
-    } else if (latency > 500) {
-        // Average Signal
-        badge.classList.add('net-avg');
-        text.innerHTML = `${type} • ${latency}ms`;
-    } else {
-        // Good Signal
-        badge.classList.add('net-good');
-        text.innerHTML = `${type} • ${latency}ms`;
+        updateHeaderStats(9999, 'offline');
     }
 }
 
 function startInfoCarousel() {
     setInterval(() => {
-        // Hide Current
         document.getElementById(infoItems[currentInfoIndex]).classList.remove('active');
-        
-        // Calculate Next
         currentInfoIndex = (currentInfoIndex + 1) % infoItems.length;
-        
-        // Show Next
         document.getElementById(infoItems[currentInfoIndex]).classList.add('active');
-    }, 3000); // 3 Seconds Gap
+    }, 3000);
 }
-
-// Start immediately
 startInfoCarousel();
 
-// --- 2. ADVANCED NETWORK MONITOR ---
 function startNetworkMonitor() {
-    // Run initial check
     checkNetworkHealth();
-    
-    // Update every 5 seconds
     setInterval(checkNetworkHealth, 5000);
 }
 
@@ -2031,18 +1528,12 @@ async function checkNetworkHealth() {
     const start = Date.now();
     let status = 'good';
     let latency = 0;
-
     try {
-        // Ping Check
-        await fetch('https://www.google.com/favicon.ico?' + start, { 
-            mode: 'no-cors', 
-            cache: 'no-store' 
-        });
+        await fetch('https://www.google.com/favicon.ico?' + start, { mode: 'no-cors', cache: 'no-store' });
         latency = Date.now() - start;
     } catch (e) {
         status = 'offline';
     }
-
     updateHeaderStats(latency, status);
 }
 
@@ -2051,20 +1542,16 @@ function updateHeaderStats(latency, status) {
     const txtEl = document.getElementById('netText');
     const spdEl = document.getElementById('speedText');
     
-    // 1. Get Network Type & Bandwidth
     const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     const type = conn ? (conn.effectiveType || '4G').toUpperCase() : 'NET';
-    const downLink = conn ? conn.downlink : 0; // Est. Mbps
+    const downLink = conn ? conn.downlink : 0;
     
-    // 2. Format Speed Text (Metric 3)
-    // Note: 'downlink' is an estimate provided by the browser
     if(status === 'offline'){
          spdEl.innerHTML = "No Connection";
     } else {
          spdEl.innerHTML = `Down: ~${downLink} Mbps`;
     }
 
-    // 3. Format Ping/Type Text (Metric 2)
     netEl.classList.remove('status-good', 'status-avg', 'status-bad');
     
     if (status === 'offline') {
@@ -2081,32 +1568,6 @@ function updateHeaderStats(latency, status) {
         txtEl.innerHTML = `${type} • ${latency}ms`;
     }
 }
-
-// Start Monitor
 startNetworkMonitor();
-window.onload = async function() {
-    // 1. Check Session
-    const storedTime = localStorage.getItem('app_login_time');
-    const now = Date.now();
-
-    if (storedTime && (now - storedTime < SESSION_DURATION)) {
-        // Session Valid -> Skip Login
-        startAppSession(parseInt(storedTime));
-    } else {
-        // Session Invalid -> Show Login (Default state is hidden app, visible overlay)
-        document.getElementById('login-overlay').style.display = 'flex';
-        document.getElementById('main-app').style.display = 'none';
-    }
-
-    // 2. Load Data
-    await loadCSVData();
-    
-    // 3. Set Default Tab to DOCUMENTS (Not Tracking)
-    // Find the documents tab button and click it
-    const docTabBtn = document.querySelector('button[onclick*="documents"]');
-    if(docTabBtn) {
-        showTab('documents', { target: docTabBtn });
-    }
-};
 </script>
 </html>
