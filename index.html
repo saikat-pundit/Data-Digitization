@@ -381,28 +381,37 @@ function createImageField(container, header, columnIndex) {
   hiddenInput.accept = 'image/*';
 
   // --- LOGIC ---
+  // --- LOGIC ---
   btn.onclick = async () => {
     if (typeof Capacitor === 'undefined' || !Capacitor.Plugins) {
         alert("Camera Error: Native bridge not found."); return;
     }
     try {
         const Camera = Capacitor.Plugins.Camera;
+        
+        // FIX: Changed resultType to 'dataUrl' to bypass Remote Server CORS issues
         const image = await Camera.getPhoto({
-            quality: 90, allowEditing: false, resultType: 'uri', source: 'CAMERA', width: 1200
+            quality: 90, 
+            allowEditing: false, 
+            resultType: 'dataUrl', // <--- CHANGED FROM 'uri'
+            source: 'CAMERA', 
+            width: 1200
         });
 
         status.innerText = 'Processing...';
         status.style.color = 'orange';
 
-        const response = await fetch(image.webPath);
+        // FIX: Fetch the Data URL directly (Allowed in all security contexts)
+        const response = await fetch(image.dataUrl);
         const blob = await response.blob();
+        
         const file = new File([blob], `photo_${columnIndex}.jpg`, { type: "image/jpeg" });
 
         const dt = new DataTransfer();
         dt.items.add(file);
         hiddenInput.files = dt.files;
         
-        // SHOW PREVIEW
+        // SHOW PREVIEW (Uses the blob we just created safely)
         imgPreview.src = URL.createObjectURL(file);
         imgPreview.style.display = 'block';
 
@@ -415,6 +424,8 @@ function createImageField(container, header, columnIndex) {
 
     } catch (e) {
         console.warn('Camera failed', e);
+        // Optional: Alert user if specific error
+        if(e.message) alert("Error: " + e.message); 
     }
   };
 
