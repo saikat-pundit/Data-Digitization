@@ -1040,6 +1040,7 @@ function createStatusDashboard() {
 }
 
 // --- 2. COUNTS UPDATE ---
+// --- 2. COUNTS UPDATE ---
 function updateStatusCountsOnly(filterValue) {
   const statusCounts = document.getElementById('statusCounts');
   if (!statusCounts) return;
@@ -1051,8 +1052,8 @@ function updateStatusCountsOnly(filterValue) {
   
   const uniqueCol3 = new Set();
   const col21Status = { VERIFIED: 0, REJECTED: 0 };
+  const col22Status = { CHECK: 0, ALERT: 0 }; // New counters for Col 22
   let col20FilledCount = 0;
-  let col22FilledCount = 0;
   
   filteredRows.forEach(row => {
     const val3 = row[0] || '';
@@ -1067,25 +1068,36 @@ function updateStatusCountsOnly(filterValue) {
       else if (val21.startsWith('REJECTED:')) col21Status.REJECTED++;
     }
     
+    // Logic for Column 22 (ECI Status)
     const val22 = row[22] || '';
-    if (val22.trim() !== '') col22FilledCount++;
+    if (val22.includes('✔️')) {
+        col22Status.CHECK++;
+    } else if (val22.includes('❗')) {
+        col22Status.ALERT++;
+    }
   });
   
   let countsHTML = '<div class="status-counts-container">';
   countsHTML += `<div class="count-box"><strong>Elector:</strong> ${uniqueCol3.size}</div>`;
   countsHTML += `<div class="count-box"><strong>Completed:</strong> ${col20FilledCount}</div>`;
+  
+  // Column 21 Display
   countsHTML += `<div class="count-box"><strong>${headers[21]}:</strong>
   <i class="fa fa-check-circle" style="color: #28a745; margin-right: 5px;"></i>: ${col21Status.VERIFIED} |
   <i class="fa fa-times-circle" style="color: #dc3545; margin-right: 5px;"></i>: ${col21Status.REJECTED}
   </div>`;
+  
+  // Column 22 Display (Updated Format)
   if (headers[22]) {
-    countsHTML += `<div class="count-box"><strong>${headers[22]}:</strong> ${col22FilledCount}</div>`;
+    countsHTML += `<div class="count-box"><strong>${headers[22]}:</strong> 
+      <span style="color:#2ecc71">✔️: ${col22Status.CHECK}</span> | 
+      <span style="color:#e74c3c">❗: ${col22Status.ALERT}</span>
+    </div>`;
   }
   
   countsHTML += '</div>';
   statusCounts.innerHTML = countsHTML;
 }
-
 // --- 3. TABLE UPDATE WITH SORTING (NO DROPDOWNS) ---
 function updateStatusTable(filterValue) {
   const statusTable = document.getElementById('statusTable');
