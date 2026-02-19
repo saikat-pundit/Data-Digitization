@@ -1754,19 +1754,63 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
     // Clear loading spinner
     resultsContainer.innerHTML = '';
     
-    // --- 1. SHOW AF COLUMN DATA FIRST (Index 31) ---
     const afValue = matchedRow[31] || '';
     if (afValue && afValue.trim() !== '') {
       const afRow = document.createElement('div');
       afRow.className = 'status-row';
-      afRow.style.backgroundColor = '#e8f4f8'; // Light blue to make it distinct
+      afRow.style.backgroundColor = '#e8f4f8'; 
       afRow.style.border = '1px solid #3498db';
       const afHeader = headers[31] || 'AF Data';
-      afRow.innerHTML = `<strong>${afHeader}:</strong> ${afValue}`;
+      const titleDiv = document.createElement('div');
+      titleDiv.innerHTML = `<strong>${afHeader}</strong>`;
+      titleDiv.style.marginBottom = '10px';
+      afRow.appendChild(titleDiv);
+      if (afValue.includes('https://docs.google.com/uc?export=download&id=')) {
+        const match = afValue.match(/id=([-\w]{25,})/);
+        const fileId = match ? match[1] : null;
+        
+        if (fileId) {
+          const imageContainer = document.createElement('div');
+          imageContainer.style.textAlign = 'center';
+          imageContainer.style.margin = '10px 0';
+          
+          const loadingDiv = document.createElement('div');
+          loadingDiv.className = 'image-loading';
+          loadingDiv.innerHTML = '<div class="spinner"><i class="fa fa-spinner fa-spin"></i></div> Loading image...';
+          imageContainer.appendChild(loadingDiv);
+          
+          const img = document.createElement('img');
+          img.referrerPolicy = "no-referrer";
+          img.src = `https://lh3.googleusercontent.com/d/$${fileId}`;
+          img.alt = afHeader;
+          img.className = 'tracking-image';
+          img.style.cursor = 'pointer';
+          img.style.display = 'none';
+          
+          img.onload = () => {
+            loadingDiv.style.display = 'none';
+            img.style.display = 'block';
+          };
+          
+          img.onerror = () => {
+            loadingDiv.innerHTML = '<i class="fa fa-exclamation-triangle"></i> Image preview not available';
+            loadingDiv.style.color = '#dc3545';
+            img.style.display = 'none';
+          };
+          
+          img.onclick = () => window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
+          
+          imageContainer.appendChild(img);
+          afRow.appendChild(imageContainer);
+        } else {
+          afRow.innerHTML += `<div>${afValue}</div>`;
+        }
+      } else {
+        afRow.innerHTML += `<div>${afValue}</div>`;
+      }
+      
       resultsContainer.appendChild(afRow);
     }
-
-    // Append main table
     resultsContainer.appendChild(table);
 
     const timeContainer = document.createElement('div');
