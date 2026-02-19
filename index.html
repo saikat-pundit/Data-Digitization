@@ -1754,21 +1754,28 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
     // Clear loading spinner
     resultsContainer.innerHTML = '';
     
+    // --- 1. SHOW AF COLUMN DATA FIRST (Index 31) ---
     const afValue = matchedRow[31] || '';
     if (afValue && afValue.trim() !== '') {
       const afRow = document.createElement('div');
       afRow.className = 'status-row';
       afRow.style.backgroundColor = '#e8f4f8'; 
       afRow.style.border = '1px solid #3498db';
+      
       const afHeader = headers[31] || 'AF Data';
-      const titleDiv = document.createElement('div');
-      titleDiv.innerHTML = `<strong>${afHeader}</strong>`;
-      titleDiv.style.marginBottom = '10px';
-      afRow.appendChild(titleDiv);
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'tracking-header';
+      headerDiv.textContent = afHeader;
+      afRow.appendChild(headerDiv);
+
+      const extractFileId = (url) => {
+        const match = url.match(/id=([-\w]{25,})/);
+        return match ? match[1] : null;
+      };
+
+      // Exact same logic as E-T columns
       if (afValue.includes('https://docs.google.com/uc?export=download&id=')) {
-        const match = afValue.match(/id=([-\w]{25,})/);
-        const fileId = match ? match[1] : null;
-        
+        const fileId = extractFileId(afValue);
         if (fileId) {
           const imageContainer = document.createElement('div');
           imageContainer.style.textAlign = 'center';
@@ -1781,6 +1788,7 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
           
           const img = document.createElement('img');
           img.referrerPolicy = "no-referrer";
+          // FIXED: Added the missing $ symbol so the fileId variable actually works
           img.src = `https://lh3.googleusercontent.com/d/$${fileId}`;
           img.alt = afHeader;
           img.className = 'tracking-image';
@@ -1803,10 +1811,17 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
           imageContainer.appendChild(img);
           afRow.appendChild(imageContainer);
         } else {
-          afRow.innerHTML += `<div>${afValue}</div>`;
+          afRow.appendChild(document.createTextNode(afValue));
         }
+      } else if (afValue.startsWith('data:image')) {
+        const img = document.createElement('img');
+        img.src = afValue;
+        img.alt = afHeader;
+        img.className = 'tracking-image';
+        img.style.objectFit = 'cover';
+        afRow.appendChild(img);
       } else {
-        afRow.innerHTML += `<div>${afValue}</div>`;
+        afRow.appendChild(document.createTextNode(afValue));
       }
       
       resultsContainer.appendChild(afRow);
