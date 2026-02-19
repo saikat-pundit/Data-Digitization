@@ -1660,7 +1660,14 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
     table.className = 'tracking-table';
     const tbody = document.createElement('tbody');
     const selectedValue3 = document.getElementById('tracking-dropdown-3').value;
+    
+    // Helper to safely extract Drive IDs
+    const extractFileId = (url) => {
+      const match = url.match(/id=([-\w]{25,})/);
+      return match ? match[1] : null;
+    };
 
+    // --- 1. MAIN TABLE CREATION (Columns E to T) ---
     headers.forEach((header, index) => {
       if (index < 4 || index > 22 || index === limitedHeaders.length - 1 || index === 21 || index === 22) return;
       
@@ -1677,7 +1684,7 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
       headerDiv.textContent = headerText;
       td.appendChild(headerDiv);
 
-      const handleImagePreview = (url, alt) => {
+      const handleImagePreview = (url, alt, originalUrl) => {
         const imageContainer = document.createElement('div');
         imageContainer.style.textAlign = 'center';
         imageContainer.style.margin = '10px 0';
@@ -1706,20 +1713,19 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
           img.style.display = 'none';
         };
         
-        img.onclick = () => window.open(url.includes('googleusercontent') ? `https://drive.google.com/file/d/${extractFileId(value)}/view` : url, '_blank');
+        // Open the full Drive view link on click
+        img.onclick = () => window.open(originalUrl, '_blank');
         imageContainer.appendChild(img);
         td.appendChild(imageContainer);
-      };
-
-      const extractFileId = (url) => {
-        const match = url.match(/id=([-\w]{25,})/);
-        return match ? match[1] : null;
       };
 
       if (value.includes('https://docs.google.com/uc?export=download&id=')) {
         const fileId = extractFileId(value);
         if (fileId) {
-          handleImagePreview(`https://lh3.googleusercontent.com/d/${fileId}`, headerText);
+          // FIX: Modern, robust Google Drive thumbnail URL
+          const previewUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+          const fullViewUrl = `https://drive.google.com/file/d/${fileId}/view`;
+          handleImagePreview(previewUrl, headerText, fullViewUrl);
         } else {
           td.textContent = value;
         }
@@ -1729,7 +1735,10 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
           const url = match[1];
           const fileId = extractFileId(url);
           if (fileId) {
-            handleImagePreview(`https://lh3.googleusercontent.com/d/${fileId}`, headerText);
+            // FIX: Modern, robust Google Drive thumbnail URL
+            const previewUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
+            const fullViewUrl = `https://drive.google.com/file/d/${fileId}/view`;
+            handleImagePreview(previewUrl, headerText, fullViewUrl);
           } else {
             td.textContent = url;
           }
@@ -1750,17 +1759,13 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
     });
 
     table.appendChild(tbody);
-    
-    // Clear loading spinner
     resultsContainer.innerHTML = '';
     
-    // --- 1. SHOW AF COLUMN DATA FIRST (Index 31) ---
+    // --- 2. SHOW AF COLUMN DATA FIRST (Index 31) ---
     const afValue = matchedRow[31] || '';
     if (afValue && afValue.trim() !== '') {
       const afRow = document.createElement('div');
       afRow.className = 'status-row';
-      afRow.style.backgroundColor = '#e8f4f8'; 
-      afRow.style.border = '1px solid #3498db';
       
       const afHeader = headers[31] || 'AF Data';
       const headerDiv = document.createElement('div');
@@ -1768,12 +1773,6 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
       headerDiv.textContent = afHeader;
       afRow.appendChild(headerDiv);
 
-      const extractFileId = (url) => {
-        const match = url.match(/id=([-\w]{25,})/);
-        return match ? match[1] : null;
-      };
-
-      // Exact same logic as E-T columns
       if (afValue.includes('https://docs.google.com/uc?export=download&id=')) {
         const fileId = extractFileId(afValue);
         if (fileId) {
@@ -1788,8 +1787,8 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
           
           const img = document.createElement('img');
           img.referrerPolicy = "no-referrer";
-          // FIXED: Added the missing $ symbol so the fileId variable actually works
-          img.src = `https://lh3.googleusercontent.com/d/$${fileId}`;
+          // FIX: Modern, robust Google Drive thumbnail URL
+          img.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
           img.alt = afHeader;
           img.className = 'tracking-image';
           img.style.cursor = 'pointer';
@@ -1826,8 +1825,11 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
       
       resultsContainer.appendChild(afRow);
     }
+
+    // Append main table
     resultsContainer.appendChild(table);
 
+    // --- 3. SHOW TIMESTAMP AND STATUS ---
     const timeContainer = document.createElement('div');
     timeContainer.className = 'time-container';
     const timeValue = matchedRow[limitedHeaders.length - 1] || 'Not available';
@@ -1852,18 +1854,19 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
       resultsContainer.appendChild(eciStatusRow);
     }
 
-    // --- 2. SHOW AE COLUMN DATA LAST (Index 30) ---
+    // --- 4. SHOW AE COLUMN DATA LAST (Index 30) ---
     const aeValue = matchedRow[30] || '';
     if (aeValue && aeValue.trim() !== '') {
       const aeRow = document.createElement('div');
       aeRow.className = 'status-row';
-      aeRow.style.backgroundColor = '#fef9e7'; // Light yellow to make it distinct
+      aeRow.style.backgroundColor = '#fef9e7'; 
       aeRow.style.border = '1px solid #f39c12';
       const aeHeader = headers[30] || 'AE Data';
       aeRow.innerHTML = `<strong>${aeHeader}:</strong> ${aeValue}`;
       resultsContainer.appendChild(aeRow);
     }
 
+    // --- 5. VERIFICATION BUTTONS ---
     if (!statusValue && hasAnyData) {
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'action-buttons';
@@ -1964,7 +1967,7 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
     }
   }, 500);
 }
-
+    
 function submitVerification(statusText,idValue){
   const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxWFPwah8jBC6RK13Yduk24r5W1Y1yn-OiyIIJSZsTmFiaFvh5o0ILZF1LTtLOsZVfyNQ/exec';
   const now=new Date(),day=now.getDate(),month=now.toLocaleString('en-GB',{month:'short'}),year=now.getFullYear();
