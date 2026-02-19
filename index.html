@@ -1044,7 +1044,7 @@ function updateStatusCountsOnly(filterValue) {
   const statusCounts = document.getElementById('statusCounts');
   if (!statusCounts) return;
   
-  // 1. REVAMP: Only include rows where Column 21 is filled
+  // 1. Only include rows where Column 21 is filled
   let filteredRows = limitedCSVData.filter(row => row[21] && row[21].trim() !== '');
   
   if (filterValue) {
@@ -1054,12 +1054,30 @@ function updateStatusCountsOnly(filterValue) {
   const uniqueCol3 = new Set();
   const col21Status = { VERIFIED: 0, REJECTED: 0 };
   const col22Status = { CHECK: 0, ALERT: 0 }; 
-  
-  // NEW: Counters for Columns 32 and 34
   const col32Status = { CHECK: 0, CROSS: 0 };
   const col34Status = { CHECK: 0, CROSS: 0 };
   
   let col20FilledCount = 0;
+  let col30FilledCount = 0; // <-- NEW: Counter for Column 30
+
+  const countHexEmoji = (text, type) => {
+      if (!text) return 0;
+      const encoded = encodeURIComponent(text);
+      
+      if (type === 'CHECK') {
+          // Matches ✔️, ✔, ✅, and ✓
+          return (encoded.match(/%E2%9C%94|%E2%9C%85|%E2%9C%93/g) || []).length;
+      }
+      if (type === 'CROSS') {
+          // Matches ❌, ✖, and ✗
+          return (encoded.match(/%E2%9D%8C|%E2%9C%96|%E2%9C%97/g) || []).length;
+      }
+      if (type === 'ALERT') {
+          // Matches ❗
+          return (encoded.match(/%E2%9D%97/g) || []).length;
+      }
+      return 0;
+  };
   
   filteredRows.forEach(row => {
     const val3 = row[0] || '';
@@ -1067,6 +1085,10 @@ function updateStatusCountsOnly(filterValue) {
     
     const val20 = row[20] || '';
     if (val20.trim() !== '') col20FilledCount++;
+
+    // <-- NEW: Check if Column 30 is filled
+    const val30 = row[30] || '';
+    if (val30.trim() !== '') col30FilledCount++;
     
     const val21 = row[21] || '';
     if (val21.trim() !== '') {
@@ -1074,19 +1096,18 @@ function updateStatusCountsOnly(filterValue) {
       else if (val21.startsWith('REJECTED:')) col21Status.REJECTED++;
     }
     
+    // Applying the Hex Counter
     const val22 = row[22] || '';
-    if (val22.includes('✔️')) col22Status.CHECK++;
-    else if (val22.includes('❗')) col22Status.ALERT++;
+    col22Status.CHECK += countHexEmoji(val22, 'CHECK');
+    col22Status.ALERT += countHexEmoji(val22, 'ALERT');
 
-    // NEW: Logic for Column 32
     const val32 = row[32] || '';
-    if (val32.includes('✔️')) col32Status.CHECK++;
-    else if (val32.includes('❌')) col32Status.CROSS++;
+    col32Status.CHECK += countHexEmoji(val32, 'CHECK');
+    col32Status.CROSS += countHexEmoji(val32, 'CROSS');
 
-    // NEW: Logic for Column 34
     const val34 = row[34] || '';
-    if (val34.includes('✔️')) col34Status.CHECK++;
-    else if (val34.includes('❌')) col34Status.CROSS++;
+    col34Status.CHECK += countHexEmoji(val34, 'CHECK');
+    col34Status.CROSS += countHexEmoji(val34, 'CROSS');
   });
   
   // --- First Row of Counts ---
@@ -1107,9 +1128,14 @@ function updateStatusCountsOnly(filterValue) {
   }
   countsHTML += '</div>';
 
-  // --- Second Row of Counts (For 32 and 34) ---
+  // --- Second Row of Counts (For 30, 32 and 34) ---
   countsHTML += '<div class="status-counts-container" style="margin-top: 10px; border-top: 1px dashed #ddd; padding-top: 10px;">';
   
+  // <-- NEW: Display for Column 30
+  if (headers[30]) {
+    countsHTML += `<div class="count-box"><strong>${headers[30]}:</strong> ${col30FilledCount}</div>`;
+  }
+
   if (headers[32]) {
     countsHTML += `<div class="count-box"><strong>${headers[32]}:</strong> 
       <span style="color:#2ecc71; font-weight:bold;">✔️: ${col32Status.CHECK}</span> | 
@@ -1128,7 +1154,6 @@ function updateStatusCountsOnly(filterValue) {
 
   statusCounts.innerHTML = countsHTML;
 }
-
 // --- 3. TABLE UPDATE WITH SORTING (NO DROPDOWNS) ---
 function updateStatusTable(filterValue) {
   const statusTable = document.getElementById('statusTable');
