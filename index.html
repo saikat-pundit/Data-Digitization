@@ -1040,19 +1040,25 @@ function createStatusDashboard() {
 }
 
 // --- 2. COUNTS UPDATE ---
-// --- 2. COUNTS UPDATE ---
 function updateStatusCountsOnly(filterValue) {
   const statusCounts = document.getElementById('statusCounts');
   if (!statusCounts) return;
   
-  let filteredRows = limitedCSVData;
+  // 1. REVAMP: Only include rows where Column 21 is filled
+  let filteredRows = limitedCSVData.filter(row => row[21] && row[21].trim() !== '');
+  
   if (filterValue) {
-    filteredRows = limitedCSVData.filter(row => row[1] === filterValue);
+    filteredRows = filteredRows.filter(row => row[1] === filterValue);
   }
   
   const uniqueCol3 = new Set();
   const col21Status = { VERIFIED: 0, REJECTED: 0 };
-  const col22Status = { CHECK: 0, ALERT: 0 }; // New counters for Col 22
+  const col22Status = { CHECK: 0, ALERT: 0 }; 
+  
+  // NEW: Counters for Columns 32 and 34
+  const col32Status = { CHECK: 0, CROSS: 0 };
+  const col34Status = { CHECK: 0, CROSS: 0 };
+  
   let col20FilledCount = 0;
   
   filteredRows.forEach(row => {
@@ -1068,46 +1074,72 @@ function updateStatusCountsOnly(filterValue) {
       else if (val21.startsWith('REJECTED:')) col21Status.REJECTED++;
     }
     
-    // Logic for Column 22 (ECI Status)
     const val22 = row[22] || '';
-    if (val22.includes('✔️')) {
-        col22Status.CHECK++;
-    } else if (val22.includes('❗')) {
-        col22Status.ALERT++;
-    }
+    if (val22.includes('✔️')) col22Status.CHECK++;
+    else if (val22.includes('❗')) col22Status.ALERT++;
+
+    // NEW: Logic for Column 32
+    const val32 = row[32] || '';
+    if (val32.includes('✔️')) col32Status.CHECK++;
+    else if (val32.includes('❌')) col32Status.CROSS++;
+
+    // NEW: Logic for Column 34
+    const val34 = row[34] || '';
+    if (val34.includes('✔️')) col34Status.CHECK++;
+    else if (val34.includes('❌')) col34Status.CROSS++;
   });
   
-  let countsHTML = '<div class="status-counts-container">';
+  // --- First Row of Counts ---
+  let countsHTML = '<div class="status-counts-container" style="margin-bottom: 10px;">';
   countsHTML += `<div class="count-box"><strong>Elector:</strong> ${uniqueCol3.size}</div>`;
   countsHTML += `<div class="count-box"><strong>Completed:</strong> ${col20FilledCount}</div>`;
   
-  // Column 21 Display
   countsHTML += `<div class="count-box"><strong>${headers[21]}:</strong>
   <i class="fa fa-check-circle" style="color: #28a745; margin-right: 5px;"></i>: ${col21Status.VERIFIED} |
   <i class="fa fa-times-circle" style="color: #dc3545; margin-right: 5px;"></i>: ${col21Status.REJECTED}
   </div>`;
   
-  // Column 22 Display (Updated Format)
   if (headers[22]) {
     countsHTML += `<div class="count-box"><strong>${headers[22]}:</strong> 
-      <span style>✔️: ${col22Status.CHECK}</span> | 
-      <span style>❗: ${col22Status.ALERT}</span>
+      <span style="color:#2ecc71">✔️: ${col22Status.CHECK}</span> | 
+      <span style="color:#e74c3c">❗: ${col22Status.ALERT}</span>
+    </div>`;
+  }
+  countsHTML += '</div>';
+
+  // --- Second Row of Counts (For 32 and 34) ---
+  countsHTML += '<div class="status-counts-container" style="margin-top: 10px; border-top: 1px dashed #ddd; padding-top: 10px;">';
+  
+  if (headers[32]) {
+    countsHTML += `<div class="count-box"><strong>${headers[32]}:</strong> 
+      <span style="color:#2ecc71; font-weight:bold;">✔️: ${col32Status.CHECK}</span> | 
+      <span style="color:#e74c3c; font-weight:bold;">❌: ${col32Status.CROSS}</span>
+    </div>`;
+  }
+  
+  if (headers[34]) {
+    countsHTML += `<div class="count-box"><strong>${headers[34]}:</strong> 
+      <span style="color:#2ecc71; font-weight:bold;">✔️: ${col34Status.CHECK}</span> | 
+      <span style="color:#e74c3c; font-weight:bold;">❌: ${col34Status.CROSS}</span>
     </div>`;
   }
   
   countsHTML += '</div>';
+
   statusCounts.innerHTML = countsHTML;
 }
+
 // --- 3. TABLE UPDATE WITH SORTING (NO DROPDOWNS) ---
 function updateStatusTable(filterValue) {
   const statusTable = document.getElementById('statusTable');
   const statusCounts = document.getElementById('statusCounts');
   if (!statusTable || !statusCounts) return;
   
-  // 1. Filter Rows
-  let filteredRows = limitedCSVData;
+  // 1. REVAMP: Filter Rows (Only keep rows where Column 21 is filled)
+  let filteredRows = limitedCSVData.filter(row => row[21] && row[21].trim() !== '');
+  
   if (filterValue) {
-    filteredRows = limitedCSVData.filter(row => row[1] === filterValue);
+    filteredRows = filteredRows.filter(row => row[1] === filterValue);
   }
   
   updateStatusCountsOnly(filterValue);
@@ -1117,7 +1149,6 @@ function updateStatusTable(filterValue) {
     const valA = a[currentSort.column] || '';
     const valB = b[currentSort.column] || '';
     
-    // Check if numeric sorting is needed
     const numA = parseFloat(valA);
     const numB = parseFloat(valB);
     
@@ -1131,7 +1162,6 @@ function updateStatusTable(filterValue) {
     return currentSort.order === 'asc' ? comparison : -comparison;
   });
 
-  // Helper to get Sort Icon
   const getSortIcon = (colIndex) => {
     if (currentSort.column !== colIndex) return '<i class="fa fa-sort" style="color:#ccc; font-size:12px;"></i>';
     return currentSort.order === 'asc' 
@@ -1142,30 +1172,21 @@ function updateStatusTable(filterValue) {
   // 3. Build Table with Sortable Headers
   let tableHTML = '<div class="status-table-container"><table class="status-table"><thead><tr>';
   
-  // Name Column (Index 3 - but usually we sort by Serial No Index 2 if Name is clicked, but here sorting by Name directly)
-  tableHTML += `<th onclick="toggleSort(2)" style="cursor:pointer;">
-      ${headers[3]} ${getSortIcon(2)}
-  </th>`;
+  tableHTML += `<th onclick="toggleSort(2)" style="cursor:pointer; white-space:nowrap;">${headers[3]} ${getSortIcon(2)}</th>`;
+  tableHTML += `<th onclick="toggleSort(20)" style="cursor:pointer; white-space:nowrap;">${headers[20]} ${getSortIcon(20)}</th>`;
+  tableHTML += `<th onclick="toggleSort(21)" style="cursor:pointer; white-space:nowrap;">${headers[21]} ${getSortIcon(21)}</th>`;
+  tableHTML += `<th onclick="toggleSort(22)" style="cursor:pointer; white-space:nowrap;">${headers[22]} ${getSortIcon(22)}</th>`;
   
-  // Column 20
-  tableHTML += `<th onclick="toggleSort(20)" style="cursor:pointer;">
-      ${headers[20]} ${getSortIcon(20)}
-  </th>`;
-
-  // Column 21
-  tableHTML += `<th onclick="toggleSort(21)" style="cursor:pointer;">
-      ${headers[21]} ${getSortIcon(21)}
-  </th>`;
-
-  // Column 22
-  tableHTML += `<th onclick="toggleSort(22)" style="cursor:pointer;">
-      ${headers[22]} ${getSortIcon(22)}
-  </th>`;
+  // NEW COLUMNS: 32, 33, 34, 35
+  if(headers[32]) tableHTML += `<th onclick="toggleSort(32)" style="cursor:pointer; white-space:nowrap;">${headers[32]} ${getSortIcon(32)}</th>`;
+  if(headers[33]) tableHTML += `<th onclick="toggleSort(33)" style="cursor:pointer; white-space:nowrap;">${headers[33]} ${getSortIcon(33)}</th>`;
+  if(headers[34]) tableHTML += `<th onclick="toggleSort(34)" style="cursor:pointer; white-space:nowrap;">${headers[34]} ${getSortIcon(34)}</th>`;
+  if(headers[35]) tableHTML += `<th onclick="toggleSort(35)" style="cursor:pointer; white-space:nowrap;">${headers[35]} ${getSortIcon(35)}</th>`;
   
   tableHTML += '</tr></thead><tbody>';
   
   if (filteredRows.length === 0) {
-      tableHTML += '<tr><td colspan="4" style="text-align:center; padding:20px;">No matching records found</td></tr>';
+      tableHTML += '<tr><td colspan="8" style="text-align:center; padding:20px;">No matching records found</td></tr>';
   } else {
       filteredRows.forEach(row => {
           const serialNo = row[2] || '';
@@ -1174,6 +1195,12 @@ function updateStatusTable(filterValue) {
           const col20 = row[20] || '';
           const col21 = row[21] || '';
           const col22 = row[22] || '';
+          
+          // New Columns data
+          const col32 = row[32] || '';
+          const col33 = row[33] || '';
+          const col34 = row[34] || '';
+          const col35 = row[35] || '';
           
           let rowClass = '';
           if (!col22.trim()) { rowClass = 'row-missing-eci'; }
@@ -1184,6 +1211,13 @@ function updateStatusTable(filterValue) {
           tableHTML += `<td>${col20}</td>`;
           tableHTML += `<td>${col21}</td>`;
           tableHTML += `<td>${col22}</td>`;
+          
+          // Append new column data
+          if(headers[32]) tableHTML += `<td>${col32}</td>`;
+          if(headers[33]) tableHTML += `<td>${col33}</td>`;
+          if(headers[34]) tableHTML += `<td>${col34}</td>`;
+          if(headers[35]) tableHTML += `<td>${col35}</td>`;
+          
           tableHTML += '</tr>';
       });
   }
