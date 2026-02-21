@@ -192,12 +192,7 @@ tr.row-critical-error td {
     background-color: #bdc3c7;
     box-shadow: 0 0 0 2px rgba(189, 195, 199, 0.2);
 }
-tr.row-critical-error, 
-tr.row-critical-error td {
-    background-color: #ff0023 !important; /* Dark Crimson Lake Hex */
-    color: #FFFFFF !important;
-    font-weight: bold !important;
-}
+
 /* Network Health Colors */
 .status-good { color: #27ae60; }
 .status-good .ping-dot { background-color: #27ae60; box-shadow: 0 0 0 2px rgba(39,174,96,0.2); }
@@ -1078,6 +1073,7 @@ function createStatusDashboard() {
 }
 
 // --- 2. COUNTS UPDATE ---
+// --- 2. COUNTS UPDATE ---
 function updateStatusCountsOnly(filterValue) {
   const statusCounts = document.getElementById('statusCounts');
   if (!statusCounts) return;
@@ -1092,11 +1088,11 @@ function updateStatusCountsOnly(filterValue) {
   const uniqueCol3 = new Set();
   const col21Status = { VERIFIED: 0, REJECTED: 0 };
   const col22Status = { CHECK: 0, ALERT: 0 }; 
+  const col30Status = { CHECK: 0, CROSS: 0 }; // NEW: Counter for Column 30
   const col32Status = { CHECK: 0, CROSS: 0 };
   const col34Status = { CHECK: 0, CROSS: 0 };
   
   let col20FilledCount = 0;
-  let col30FilledCount = 0; // <-- NEW: Counter for Column 30
 
   const countHexEmoji = (text, type) => {
       if (!text) return 0;
@@ -1124,9 +1120,15 @@ function updateStatusCountsOnly(filterValue) {
     const val20 = row[20] || '';
     if (val20.trim() !== '') col20FilledCount++;
 
-    // <-- NEW: Check if Column 30 is filled
+    // --- Column 30 Calculation ---
     const val30 = row[30] || '';
-    if (val30.trim() !== '') col30FilledCount++;
+    if (val30.trim() !== '') {
+      if (val30.includes('EXCLUSION:')) {
+        col30Status.CROSS++;
+      } else {
+        col30Status.CHECK++;
+      }
+    }
     
     const val21 = row[21] || '';
     if (val21.trim() !== '') {
@@ -1169,9 +1171,11 @@ function updateStatusCountsOnly(filterValue) {
   // --- Second Row of Counts (For 30, 32 and 34) ---
   countsHTML += '<div class="status-counts-container" style="margin-top: 10px; border-top: 1px dashed #ddd; padding-top: 10px;">';
   
-  // <-- NEW: Display for Column 30
   if (headers[30]) {
-    countsHTML += `<div class="count-box"><strong>${headers[30]}:</strong> ${col30FilledCount}</div>`;
+    countsHTML += `<div class="count-box"><strong>${headers[30]}:</strong> 
+      <span style="color:#2ecc71; font-weight:bold;">✔️: ${col30Status.CHECK}</span> | 
+      <span style="color:#e74c3c; font-weight:bold;">❌: ${col30Status.CROSS}</span>
+    </div>`;
   }
 
   if (headers[32]) {
@@ -1834,7 +1838,6 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
       if (value.includes('https://docs.google.com/uc?export=download&id=')) {
         const fileId = extractFileId(value);
         if (fileId) {
-          // FIX: Modern, robust Google Drive thumbnail URL
           const previewUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
           const fullViewUrl = `https://drive.google.com/file/d/${fileId}/view`;
           handleImagePreview(previewUrl, headerText, fullViewUrl);
@@ -1847,7 +1850,6 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
           const url = match[1];
           const fileId = extractFileId(url);
           if (fileId) {
-            // FIX: Modern, robust Google Drive thumbnail URL
             const previewUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
             const fullViewUrl = `https://drive.google.com/file/d/${fileId}/view`;
             handleImagePreview(previewUrl, headerText, fullViewUrl);
@@ -1871,13 +1873,40 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
     });
 
     table.appendChild(tbody);
-    resultsContainer.innerHTML = '';
+    resultsContainer.innerHTML = ''; // Clear loading spinner
     
-    // --- 2. SHOW AF COLUMN DATA FIRST (Index 31) ---
+    // =========================================================
+    // --- NEW ORDER: V(21), W(22), AE(30), AG(32), AH(33), AI(34), AJ(35) AT THE TOP ---
+    // =========================================================
+    const topColumns = [
+      { idx: 21 }, // V
+      { idx: 22 }, // W
+      { idx: 30, bg: '#fef9e7', border: '1px solid #f39c12' }, // AE (with custom yellow style)
+      { idx: 32 }, // AG
+      { idx: 33 }, // AH
+      { idx: 34 }, // AI
+      { idx: 35 }  // AJ
+    ];
+
+    topColumns.forEach(({ idx, bg, border }) => {
+      const val = (matchedRow[idx] || '').trim();
+      if (val !== '') {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'status-row';
+        if (bg) rowDiv.style.backgroundColor = bg;
+        if (border) rowDiv.style.border = border;
+        rowDiv.innerHTML = `<strong>${headers[idx] || 'Data'}:</strong> ${val}`;
+        resultsContainer.appendChild(rowDiv);
+      }
+    });
+
+    // --- Column AF (Index 31) ---
     const afValue = matchedRow[31] || '';
     if (afValue && afValue.trim() !== '') {
       const afRow = document.createElement('div');
       afRow.className = 'status-row';
+      afRow.style.backgroundColor = '#e8f4f8'; 
+      afRow.style.border = '1px solid #3498db';
       
       const afHeader = headers[31] || 'AF Data';
       const headerDiv = document.createElement('div');
@@ -1899,7 +1928,6 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
           
           const img = document.createElement('img');
           img.referrerPolicy = "no-referrer";
-          // FIX: Modern, robust Google Drive thumbnail URL
           img.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`;
           img.alt = afHeader;
           img.className = 'tracking-image';
@@ -1938,47 +1966,18 @@ function searchTrackingData(value1, value2 = null, value3 = null) {
       resultsContainer.appendChild(afRow);
     }
 
-    // Append main table
+    // =========================================================
+    // Append the Main Table (Columns E to T)
     resultsContainer.appendChild(table);
 
-    // --- 3. SHOW TIMESTAMP AND STATUS ---
+    // --- SHOW TIMESTAMP AT THE VERY END ---
     const timeContainer = document.createElement('div');
     timeContainer.className = 'time-container';
     const timeValue = matchedRow[limitedHeaders.length - 1] || 'Not available';
     timeContainer.innerHTML = `<strong>${headers[limitedHeaders.length - 1]}:</strong> ${timeValue}`;
     resultsContainer.appendChild(timeContainer);
 
-    const statusValue = matchedRow[21] || '';
-    if (statusValue && statusValue !== '') { 
-      const statusRow = document.createElement('div');
-      statusRow.className = 'status-row';
-      const statusText = `<strong>${headers[21]}:</strong> ${statusValue}`;
-      statusRow.innerHTML = statusText;
-      resultsContainer.appendChild(statusRow);
-    }
-
-    const eciStatusValue = matchedRow[22] || '';
-    if (eciStatusValue && eciStatusValue.trim() !== '') {
-      const eciStatusRow = document.createElement('div');
-      eciStatusRow.className = 'status-row';
-      const eciStatusText = `<strong>${headers[22]}:</strong> ${eciStatusValue}`;
-      eciStatusRow.innerHTML = eciStatusText;
-      resultsContainer.appendChild(eciStatusRow);
-    }
-
-    // --- 4. SHOW AE COLUMN DATA LAST (Index 30) ---
-    const aeValue = matchedRow[30] || '';
-    if (aeValue && aeValue.trim() !== '') {
-      const aeRow = document.createElement('div');
-      aeRow.className = 'status-row';
-      aeRow.style.backgroundColor = '#fef9e7'; 
-      aeRow.style.border = '1px solid #f39c12';
-      const aeHeader = headers[30] || 'AE Data';
-      aeRow.innerHTML = `<strong>${aeHeader}:</strong> ${aeValue}`;
-      resultsContainer.appendChild(aeRow);
-    }
-
-    // --- 5. VERIFICATION BUTTONS ---
+    // --- VERIFICATION BUTTONS ---
     if (!statusValue && hasAnyData) {
       const buttonContainer = document.createElement('div');
       buttonContainer.className = 'action-buttons';
