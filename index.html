@@ -425,8 +425,8 @@ async function loadDownloadData() {
                         <strong>${displayName}</strong>
                     </td>
                     <td>${sizeMB}</td>
-                    <td>
-                        <a href="${asset.browser_download_url}" target="_blank" rel="noopener noreferrer" class="download-action-btn">
+                   <td>
+                        <a href="javascript:void(0);" onclick="if(confirm('Open this link in your external browser to download?')) { window.open('${asset.browser_download_url}', '_blank'); }" class="download-action-btn">
                             <i class="fa fa-download"></i> Download
                         </a>
                     </td>
