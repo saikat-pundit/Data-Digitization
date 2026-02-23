@@ -414,10 +414,12 @@ async function loadDownloadData() {
         data.assets.forEach(asset => {
             // Removes all "_" and the ".zip" extension
             const displayName = asset.name.replace(/_/g, '').replace(/\.zip$/i, '');
-            
             const sizeMB = (asset.size / (1024 * 1024)).toFixed(2) + ' MB';
             
-            // REMOVED the fileDate calculation and the Uploaded date div
+            // --- NEW: Create Android Intent URL to force external browser ---
+            const cleanUrl = asset.browser_download_url.replace(/^https?:\/\//, '');
+            const intentUrl = `intent://${cleanUrl}#Intent;scheme=https;action=android.intent.action.VIEW;end;`;
+
             html += `
                 <tr>
                     <td>
@@ -425,8 +427,8 @@ async function loadDownloadData() {
                         <strong>${displayName}</strong>
                     </td>
                     <td>${sizeMB}</td>
-                   <td>
-                        <a href="javascript:void(0);" onclick="if(confirm('Open this link in your external browser to download?')) { window.open('${asset.browser_download_url}', '_blank'); }" class="download-action-btn">
+                    <td>
+                        <a href="javascript:void(0);" onclick="if(confirm('Open this link in your external browser to download?')) { window.location.href = '${intentUrl}'; }" class="download-action-btn">
                             <i class="fa fa-download"></i> Download
                         </a>
                     </td>
