@@ -236,6 +236,47 @@ tr.row-critical-error td {
 .fa-unlock:hover {
   transform: rotate(15deg);
 }
+/* --- DOWNLOAD SECTION STYLES --- */
+.download-table-container {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.download-table {
+    width: 100%;
+    margin: 0 auto;
+    border-collapse: collapse;
+    text-align: center; /* Centered text */
+}
+.download-table th, .download-table td {
+    border-bottom: 1px solid #edf2f7;
+    vertical-align: middle;
+}
+.download-table th {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 600;
+}
+.download-table td { color: #4a5568; }
+.download-table tbody tr:hover { background-color: #f7fafc; }
+.download-action-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 6px 12px; /* Reduced button padding */
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+.download-action-btn:hover {
+    background: linear-gradient(135deg, #2980b9, #2471a3);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+    transform: translateY(-1px);
+}
     </style>
 </head>
 <body>
@@ -285,9 +326,12 @@ tr.row-critical-error td {
                 <p style="margin: 5px 0 0 0;">Personalised Document Digitization Portal</p>
             </header>
             <div class="tabs">
-                <button class="tab-btn active" onclick="showTab('documents', event)"><i class="fa fa-file-text-o"></i> Documents</button>
-                <button class="tab-btn" onclick="showTab('status', event)"><i class="fa fa-bar-chart"></i> Dashboard</button>
+                <button class="tab-btn" onclick="showTab('documents', event)" style="display: none;"><i class="fa fa-file-text-o"></i> Documents</button>
+                
+                <button class="tab-btn active" onclick="showTab('status', event)"><i class="fa fa-bar-chart"></i> Dashboard</button>
                 <button class="tab-btn" onclick="showTab('tracking', event)"><i class="fa fa-search"></i> Tracking</button>
+                
+                <button class="tab-btn" onclick="showTab('download', event)"><i class="fa fa-download"></i> Download</button>
             </div>
             <div id="documents-tab" class="tab-content active">
                 <main class="form-card">
@@ -311,6 +355,12 @@ tr.row-critical-error td {
                     <div id="trackingResults"></div>
                 </div>
             </div>
+          <div id="download-tab" class="tab-content">
+                <div class="form-card">
+                    <h3>Download Section</h3>
+                    <div id="downloadContainer">Development coming soon...</div>
+                </div>
+            </div>
         </div> 
     </div> 
     <div id="confirmModal" class="modal" style="display:none;"></div>
@@ -328,6 +378,72 @@ let pageLoadTime = Date.now();
 const LOCK_STORAGE_KEY = 'csv_lock_state';
 let currentInfoIndex = 0;
 const infoItems = ['infoSession', 'infoNet', 'infoSpeed'];
+// --- DOWNLOAD SECTION LOGIC ---
+let isDownloadLoaded = false;
+
+async function loadDownloadData() {
+    const container = document.getElementById('downloadContainer');
+    if (isDownloadLoaded) return; 
+    
+    container.innerHTML = '<div class="loading-spinner"><i class="fa fa-spinner fa-spin"></i> Fetching files from server...</div>';
+    
+    try {
+        const apiUrl = 'https://api.github.com/repos/saikat-pundit/watchlists/releases/tags/206-2016_AERO_ZIP_latest';
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) throw new Error('Failed to connect to repository');
+        const data = await response.json();
+
+        if (!data.assets || data.assets.length === 0) {
+            container.innerHTML = '<div class="no-data-message"><i class="fa fa-folder-open"></i> No files available for download yet.</div>';
+            return;
+        }
+
+        // --- NEW: SORT ASSETS LOW TO HIGH BASED ON NUMBER ---
+        data.assets.sort((a, b) => {
+            // Extracts the number from strings like "Part_.122.zip"
+            const numA = parseInt(a.name.match(/\d+/)) || 0;
+            const numB = parseInt(b.name.match(/\d+/)) || 0;
+            return numA - numB;
+        });
+
+        let html = '<div class="download-table-container"><table class="download-table">';
+        html += '<thead><tr><th>Part No.</th><th>Size</th><th>Action</th></tr></thead><tbody>';
+
+        data.assets.forEach(asset => {
+            // Removes all "_" and the ".zip" extension
+            const displayName = asset.name.replace(/_/g, '').replace(/\.zip$/i, '');
+            
+            const sizeMB = (asset.size / (1024 * 1024)).toFixed(2) + ' MB';
+            
+            // REMOVED the fileDate calculation and the Uploaded date div
+            html += `
+                <tr>
+                    <td>
+                        <i class="fa fa-file-zip-o" style="color: #7f8c8d; margin-right: 8px;"></i> 
+                        <strong>${displayName}</strong>
+                    </td>
+                    <td>${sizeMB}</td>
+                    <td>
+                        <a href="${asset.browser_download_url}" class="download-action-btn">
+                            <i class="fa fa-download"></i> Download
+                        </a>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+        isDownloadLoaded = true;
+
+    } catch (error) {
+        container.innerHTML = `<div class="error-message" style="color: red; padding: 15px; text-align: center;">
+            <i class="fa fa-exclamation-triangle fa-2x"></i><br><br>
+            Error loading downloads: ${error.message}
+        </div>`;
+    }
+} 
 function getLockState() {
   const saved = localStorage.getItem(LOCK_STORAGE_KEY);
   return saved ? JSON.parse(saved) : {};
@@ -2099,6 +2215,7 @@ function showTab(tabName,event){
   else event.target.classList.add('active');
   
   if(tabName==='tracking'&&!document.getElementById('tracking-dropdown-1')) createTrackingForm();
+  if(tabName==='download') loadDownloadData();
   if(tabName==='status'){
     const statusFilter=document.getElementById('statusFilter');
     if(statusFilter&&statusFilter.innerHTML===''){
@@ -2411,11 +2528,10 @@ window.onload = async function() {
     // 2. Load Data
     await loadCSVData();
     
-    // 3. Set Default Tab to DOCUMENTS (Not Tracking)
-    // Find the documents tab button and click it
-    const docTabBtn = document.querySelector('button[onclick*="documents"]');
-    if(docTabBtn) {
-        showTab('documents', { target: docTabBtn });
+    // 3. Set Default Tab to DASHBOARD (status)
+    const statusTabBtn = document.querySelector('button[onclick*="status"]');
+    if(statusTabBtn) {
+        showTab('status', { target: statusTabBtn });
     }
 };
 </script>
